@@ -1,0 +1,125 @@
+{% extends 'layout.html' %}
+{% block content %}
+    <div id="python-exec-wrapper">
+        <div id="python-input-exec" style="width: 800px; height: 600px; border: 1px solid grey"></div>
+        <textarea id="python-result-exec" disabled></textarea>
+
+        <button id="python-run-btn-exec" type="button">run</button>
+    </div>
+    <textarea id="python-input-eval"></textarea>
+    <textarea id="python-result-eval" disabled></textarea>
+    <button id="python-run-btn-eval" type="button">run</button>
+    <form id="file-form"><input type="file" name="file">
+        <button type="button" id="file-upload">upload</button>
+    </form>
+
+    <script>
+        var require = {
+            paths: {'vs': '/static/min/vs'},
+            'vs/nls': {
+                availableLanguages: {
+                    '*': 'ja'
+                }
+            }
+        };
+    </script>
+    <script src="/static/min/vs/loader.js"></script>
+    <script src="/static/min/vs/editor/editor.main.js"></script>
+    <script src="/static/min/vs/editor/editor.main.nls.js"></script>
+    <script src="/static/min/vs/editor/editor.main.nls.ja.js"></script>
+
+    <script>
+        var editor;
+        var session;
+        var text = [
+            'function x() {',
+            '\tconsole.log("Hello world!");',
+            '}'
+        ].join('\n');
+        /*  require.config({
+                paths: { 'vs': '/static/min/vs' },
+                'vs/nls' : {
+                    availableLanguages: {
+                        '*': 'ja'
+                    }
+                }
+            });
+        */
+        let initializer = setInterval(() => {
+            session = monaco.editor.createModel(text, 'python');
+            editor = monaco.editor.create(document.getElementById('python-input-exec'), {});
+            editor.setModel(session);
+            clearInterval(initializer)
+        }, 100)
+    </script>
+    <script>
+        $('#file-upload').on('click', () => {
+            let formData = new FormData($('#file-form')[0]);
+            formData.append('sessionId', Cookies.get('sessionId'));
+
+            $.ajax({
+                url: '{{ endpoints['upload_db']() }}',
+                type: 'POST',
+                dataType: 'json',
+                data: formData,
+                processData: false,
+                contentType: false
+            })
+                .done((data) => {
+                    alert('success');
+                })
+                .fail((data) => {
+                    console.log(data)
+                    alert('error');
+                });
+        })
+
+        $pythonInputExec = $('#python-input-exec');
+        $pythonResultExec = $('#python-result-exec');
+        $pythonRunBtnExec = $('#python-run-btn-exec');
+
+        $pythonInputEval = $('#python-input-eval');
+        $pythonResultEval = $('#python-result-eval');
+        $pythonRunBtnEval = $('#python-run-btn-eval');
+
+        $pythonRunBtnExec.on('click', () => {
+            $.ajax({
+                url: '{{ endpoints['run_python']() }}',
+                type: 'POST',
+                data: {
+                    sessionId: Cookies.get('sessionId'),
+                    code: editor.getValue(),
+                    executeType: 'exec'
+                },
+                dataType: 'json'
+            })
+                .done((data) => {
+                    $pythonResultExec.val(data.result);
+                })
+                .fail((data) => {
+                    console.log(data)
+                    alert('error');
+                });
+        })
+
+        $pythonRunBtnEval.on('click', () => {
+            $.ajax({
+                url: '{{ endpoints['run_python']() }}',
+                type: 'POST',
+                data: {
+                    sessionId: Cookies.get('sessionId'),
+                    code: $pythonInputEval.val(),
+                    executeType: 'eval'
+                },
+                dataType: 'json'
+            })
+                .done((data) => {
+                    $pythonResultEval.val(data.result);
+                })
+                .fail((data) => {
+                    console.log(data)
+                    alert('error');
+                });
+        })
+    </script>
+{% endblock %}
