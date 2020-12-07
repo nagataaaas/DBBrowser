@@ -1,6 +1,6 @@
 from functools import partial
 
-from fastapi import FastAPI, Response, Form, UploadFile, File
+from fastapi import FastAPI, Response, Form, UploadFile, File, Cookie
 from fastapi.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 from starlette.requests import Request
@@ -41,11 +41,38 @@ def update_endpoint():
 
 
 @app.get('/')
-def index(req: Request):
+async def index(req: Request, session_id: Optional[str] = Cookie(None, description='the session_id. '
+                                                                                   'can continue environment '
+                                                                                   'with existing session_id',
+                                                                 alias='sessionId', )):
+    if session_id and session_id in env:
+        response = templates.TemplateResponse('index.html', {'endpoints': endpoints,
+                                                             'request': req,
+                                                             'is_new': 'false'})
+        return response
     new_env = Environment()
 
     env[new_env.session_id] = new_env
-    response = templates.TemplateResponse('index.html', {'endpoints': endpoints, 'request': req})
+    response = templates.TemplateResponse('index.html', {'endpoints': endpoints, 'request': req,
+                                                         'is_new': 'true'})
+    response.set_cookie('sessionId', new_env.session_id)
+    return response
+
+
+@app.get('/reset')
+async def reset(req: Request, session_id: Optional[str] = Cookie(None, description='the session_id. '
+                                                                                   'can continue environment '
+                                                                                   'with existing session_id',
+                                                                 alias='sessionId', )):
+    if session_id and session_id in env:
+        env[session_id].__del__()
+        del env[session_id]
+
+    new_env = Environment()
+
+    env[new_env.session_id] = new_env
+    response = templates.TemplateResponse('index.html', {'endpoints': endpoints, 'request': req,
+                                                         'is_new': 'true'})
     response.set_cookie('sessionId', new_env.session_id)
     return response
 
@@ -64,15 +91,16 @@ async def run_python(sessionId: str = Form(..., description='The session id. sto
     result = None
     if sessionId not in env:
         return JSONResponse(jsonable_encoder(EnvironmentNotFound), 404)
+    env[sessionId].history = code
     if executeType == 'exec':
-        with stdoutIO() as s:
-            try:
+        try:
+            with stdoutIO() as s:
                 exec(code, env[sessionId].env)
                 result = s.getvalue()
-            except Exception as e:
-                return JSONResponse(
-                    jsonable_encoder(PythonResultFailed(errorType=type(e).__name__, traceback=traceback.format_exc())),
-                    400)
+        except Exception as e:
+            return JSONResponse(
+                jsonable_encoder(PythonResultFailed(errorType=type(e).__name__, traceback=traceback.format_exc(),
+                                                    result=s.getvalue())), 400)
     elif executeType == 'eval':
         try:
             result = repr(eval(code, env[sessionId].env))
@@ -87,17 +115,19 @@ def health(req: Request):
     return {'health': 'ok'}
 
 
-@app.post('/api/upload/db')
+@app.post('/api/upload/db', response_model=DatabaseUploadResult)
 async def upload_db(sessionId: str = Form(..., description='The session id. stored in cookie'),
                     file: UploadFile = File(..., description='database file which can open with sqlite3 in python3')):
     db_dir = './static/db'
     extension = Path(file.filename).suffix or 'db'
     new_file_base = sessionId + uuid4().hex
     filepath = str(Path(os.path.join(db_dir, new_file_base)).with_suffix(extension))
-    print(filepath)
+
     with open(filepath, 'wb') as f:
         shutil.copyfileobj(file.file, f)
-    env[sessionId].add_db(filepath)
+    conn, c, file_var = env[sessionId].add_db(filepath)
+    return JSONResponse(jsonable_encoder(DatabaseUploadResult(connection=conn, cursor=c,
+                                                              filepathVar=file_var, filepath=repr(filepath))))
 
 
 update_endpoint()

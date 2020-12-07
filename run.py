@@ -1,8 +1,9 @@
-from urls import app
+from urls import app, env
 import uvicorn
 
 if __name__ == '__main__':
-    uvicorn.run(app=app)
-
-import sqlite3
-
+    try:
+        uvicorn.run(app=app)
+    except:
+        for environ in env.values():
+            del environ

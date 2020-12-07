@@ -1,0 +1,65 @@
+#python-exec-wrapper {
+    width: 60%;
+    height: 60vw;
+    margin: 0;
+}
+
+#python-input-exec {
+    position: relative;
+    z-index: 2;
+    border: 1px solid grey;
+    width: 100%;
+    height: 83%;
+    max-height: 83vh;
+}
+
+#python-run-btn-exec {
+    position: absolute;
+    visibility: hidden;
+    font-family: Consolas, "Courier New", monospace;
+    right: 0;
+    bottom: 0;
+    z-index: 4;
+    border: none;
+    font-size: 1.5em;
+    background: #018786;
+    width: 4em;
+    height: 2em;
+    color: white;
+    vertical-align: middle;
+    text-align: center;
+}
+
+#python-exec-error {
+    position: absolute;
+    visibility: hidden;
+    font-family: Consolas, "Courier New", monospace;
+    background: #333333;
+    color: #ab4343;
+    width: 100%;
+    height: 35%;
+    bottom: 0;
+    z-index: 3;
+}
+
+#python-result-exec {
+    height: 17%;
+    margin: 0;
+    width: 100%;
+    max-height: 17vh;
+}
+
+#hide-text-area {
+    display: block;
+    visibility: hidden;
+    width: 2em;
+    height: 2em;
+    border: none;
+    margin: 0 0 auto auto;
+    background: white;
+    color: #ab4343;
+    position: absolute;
+    top: 65%;
+    right: 0;
+    z-index: 5;
+}

@@ -1,10 +1,14 @@
 {% extends 'layout.html' %}
 {% block content %}
     <div id="python-exec-wrapper">
-        <div id="python-input-exec" style="width: 800px; height: 600px; border: 1px solid grey"></div>
-        <textarea id="python-result-exec" disabled></textarea>
+        <div id="python-input-exec">
+            <button id="python-run-btn-exec" type="button">RUN ▶</button>
+            <textarea id="python-exec-error" readonly>
+            </textarea>
+            <button id="hide-text-area" type="button">&#10006;</button>
+        </div>
+        <div id="python-result-exec"></div>
 
-        <button id="python-run-btn-exec" type="button">run</button>
     </div>
 
     <form id="file-form"><input type="file" name="file">
@@ -29,11 +33,10 @@
     <script>
         var editor;
         var session;
-        var text = [
-            'function x() {',
-            '\tconsole.log("Hello world!");',
-            '}'
-        ].join('\n');
+
+        var result;
+        var resultSession;
+        var text = `{{ history | safe}}`;
         /*  require.config({
                 paths: { 'vs': '/static/min/vs' },
                 'vs/nls' : {
@@ -44,10 +47,61 @@
             });
         */
         let initializer = setInterval(() => {
+            text = Cookies.get('history');
+            resultText = '# result will pop here\n# and note that this box is READONLY';
+            const cookieFoundButNoEnv = `# We received your sessionID.\n# but couldn\'t find any existing environment matches to it :(\n\n`
+            const defaultText = `# there is a sample database connection already
+
+# get all tables
+sample_c.execute("SELECT name FROM sqlite_master WHERE type='table';")
+tables = sample_c.fetchall()
+print('All tables:', '; '.join([table[0] for table in tables]))
+
+# get a single row of data from the very first table
+sample_c.execute('SELECT * FROM %s LIMIT 1' % tables[0])
+data = sample_c.fetchone()
+
+sample_c.execute('SELECT * FROM %s' % tables[0])
+column_name = map(lambda x: x[0], sample_c.description)
+
+from pprint import pprint
+
+pprint({k: v for k, v in zip(column_name, data)})`;
+            if ({{ is_new }}) {
+                if (text !== undefined) {
+                    text = cookieFoundButNoEnv + defaultText;
+                } else {
+                    text = defaultText;
+                }
+            } else {
+                if (Cookies.get('result') !== undefined) {
+                    resultText = Cookies.get('result');
+                }
+            }
             session = monaco.editor.createModel(text, 'python');
-            editor = monaco.editor.create(document.getElementById('python-input-exec'), {});
+            editor = monaco.editor.create(document.getElementById('python-input-exec'), {
+                tabSize: 4,
+                theme: 'vs-dark'
+            });
             editor.setModel(session);
-            clearInterval(initializer)
+
+            resultSession = monaco.editor.createModel(resultText, 'python');
+            result = monaco.editor.create(document.getElementById('python-result-exec'), {
+                model: null,
+                readOnly: true,
+                minimap: {enabled: false}
+            });
+            result.setModel(resultSession);
+
+            window.onresize = function () {
+                editor.layout();
+                result.layout();
+            };
+            $('#python-run-btn-exec').css('visibility', 'visible');
+            clearInterval(initializer);
+            setInterval(() => {
+                Cookies.set('history', editor.getValue())
+            }, 100000)
         }, 100)
     </script>
     <script>
@@ -64,7 +118,14 @@
                 contentType: false
             })
                 .done((data) => {
-                    alert('success');
+                    let before = result.getValue() + '\n';
+                    before += `\nconnection variable : ${data.connection}`
+                    before += `\ncursor variable     : ${data.cursor}`
+                    before += `\nfilepath variable   : ${data.filepathVar}`
+                    before += `\nfilepath            : ${data.filepath}`
+                    result.setValue(before);
+                    $('#python-exec-error').css('visibility', 'hidden');
+                    $('#hide-text-area').css('visibility', 'hidden');
                 })
                 .fail((data) => {
                     console.log(data)
@@ -76,11 +137,8 @@
         $pythonResultExec = $('#python-result-exec');
         $pythonRunBtnExec = $('#python-run-btn-exec');
 
-        {#$pythonInputEval = $('#python-input-eval');#}
-        {#$pythonResultEval = $('#python-result-eval');#}
-        {#$pythonRunBtnEval = $('#python-run-btn-eval');#}
-
         $pythonRunBtnExec.on('click', () => {
+            Cookies.set('history', editor.getValue())
             $.ajax({
                 url: '{{ endpoints['run_python']() }}',
                 type: 'POST',
@@ -92,32 +150,32 @@
                 dataType: 'json'
             })
                 .done((data) => {
-                    $pythonResultExec.val(data.result);
+                    let res = data.result;
+                    res = res.replace(/^\s|\s$/g, '');
+                    Cookies.set('result', res);
+                    result.setValue(res);
+                    $('#python-exec-error').css('visibility', 'hidden');
+                    $('#hide-text-area').css('visibility', 'hidden');
                 })
                 .fail((data) => {
                     console.log(data)
-                    alert('error');
+                    let res = data.responseJSON.result;
+                    if (res !== undefined) {
+                        res = res.replace(/^\s|\s$/g, '');
+                    } else {
+                        res = '';
+                    }
+                    Cookies.set('result', res);
+                    result.setValue(res);
+                    $('#python-exec-error').val(data.responseJSON.traceback)
+                    $('#python-exec-error').css('visibility', 'visible');
+                    $('#hide-text-area').css('visibility', 'visible');
                 });
         })
-        {##}
-        {#$pythonRunBtnEval.on('click', () => {#}
-        {#    $.ajax({#}
-        {#        url: '{{ endpoints['run_python']() }}',#}
-        {#        type: 'POST',#}
-        {#        data: {#}
-        {#            sessionId: Cookies.get('sessionId'),#}
-        {#            code: $pythonInputEval.val(),#}
-        {#            executeType: 'eval'#}
-        {#        },#}
-        {#        dataType: 'json'#}
-        {#    })#}
-        {#        .done((data) => {#}
-        {#            $pythonResultEval.val(data.result);#}
-        {#        })#}
-        {#        .fail((data) => {#}
-        {#            console.log(data)#}
-        {#            alert('error');#}
-        {#        });#}
-        {#})#}
+
+        $('#hide-text-area').on('click', () => {
+            $('#python-exec-error').css('visibility', 'hidden');
+            $('#hide-text-area').css('visibility', 'hidden');
+        })
     </script>
 {% endblock %}
