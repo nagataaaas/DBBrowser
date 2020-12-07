@@ -6,9 +6,7 @@
 
         <button id="python-run-btn-exec" type="button">run</button>
     </div>
-    <textarea id="python-input-eval"></textarea>
-    <textarea id="python-result-eval" disabled></textarea>
-    <button id="python-run-btn-eval" type="button">run</button>
+
     <form id="file-form"><input type="file" name="file">
         <button type="button" id="file-upload">upload</button>
     </form>
@@ -78,9 +76,9 @@
         $pythonResultExec = $('#python-result-exec');
         $pythonRunBtnExec = $('#python-run-btn-exec');
 
-        $pythonInputEval = $('#python-input-eval');
-        $pythonResultEval = $('#python-result-eval');
-        $pythonRunBtnEval = $('#python-run-btn-eval');
+        {#$pythonInputEval = $('#python-input-eval');#}
+        {#$pythonResultEval = $('#python-result-eval');#}
+        {#$pythonRunBtnEval = $('#python-run-btn-eval');#}
 
         $pythonRunBtnExec.on('click', () => {
             $.ajax({
@@ -101,25 +99,25 @@
                     alert('error');
                 });
         })
-
-        $pythonRunBtnEval.on('click', () => {
-            $.ajax({
-                url: '{{ endpoints['run_python']() }}',
-                type: 'POST',
-                data: {
-                    sessionId: Cookies.get('sessionId'),
-                    code: $pythonInputEval.val(),
-                    executeType: 'eval'
-                },
-                dataType: 'json'
-            })
-                .done((data) => {
-                    $pythonResultEval.val(data.result);
-                })
-                .fail((data) => {
-                    console.log(data)
-                    alert('error');
-                });
-        })
+        {##}
+        {#$pythonRunBtnEval.on('click', () => {#}
+        {#    $.ajax({#}
+        {#        url: '{{ endpoints['run_python']() }}',#}
+        {#        type: 'POST',#}
+        {#        data: {#}
+        {#            sessionId: Cookies.get('sessionId'),#}
+        {#            code: $pythonInputEval.val(),#}
+        {#            executeType: 'eval'#}
+        {#        },#}
+        {#        dataType: 'json'#}
+        {#    })#}
+        {#        .done((data) => {#}
+        {#            $pythonResultEval.val(data.result);#}
+        {#        })#}
+        {#        .fail((data) => {#}
+        {#            console.log(data)#}
+        {#            alert('error');#}
+        {#        });#}
+        {#})#}
     </script>
 {% endblock %}
