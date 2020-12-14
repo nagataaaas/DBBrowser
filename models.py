@@ -11,21 +11,19 @@ from scheme import *
 from enum import Enum
 
 from typing import List, Tuple
+from pprint import pprint
 
 
 class Environment:
     def __init__(self, new=True):
         self.session_id = uuid4().hex
-        self.env = {'session_id': self.session_id, 'env': self}
+        self.env = {'session_id': self.session_id, 'env': self, 'pprint': pprint}
         self.max_db = 0
 
         sample_file = './static/db/' + self.session_id + '.db'
-        if os.path.exists(sample_file):
-            print(os.path.getsize(sample_file))
         while new or not os.path.exists(sample_file) or not os.path.getsize(sample_file):
             shutil.copy('./static/database.db', sample_file)
             time.sleep(0.3)
-            print(os.path.getsize(sample_file))
             if os.path.getsize(sample_file):
                 break
 
@@ -134,6 +132,7 @@ class Environment:
             print(self.env['db{}_path'.format(i)])
             os.remove(self.env['db{}_path'.format(i)])
 
+
 class Operation(Enum):
     Equal = 0
     NotEqual = 1
@@ -147,8 +146,10 @@ class Operation(Enum):
     Larger = 9
     LargerEq = 10
 
+
 class CompOperation:
     integer_type = {'integer'}
+
     def __init__(self, db_editor: 'DBEditor', operation: Operation, value: List[str]):
         self.db_editor = db_editor
         self.operation = operation
@@ -201,73 +202,49 @@ class CompOperation:
     def xor_(self, other: 'CompOperation'):
         return f'({self.sql}) XOR ({other.sql})'
 
+
 class TableSelector:
-    def __init__(self, table: str, select: List[str]=None, clone=False):
+    def __init__(self, table: str, select: List[str] = None, clone=False):
         if clone:
             return
         self.table = table
         if select is None:
             select = []
-        self.select = select
+        self.select_ = select
         self.condition = []
         self.limit_ = 0
-        self.order_by_: str = None
+        self.order_by_: List[str] = []
         self.cursor: sqlite3.Cursor = None
         self.table_info: DatabaseTableInfo = None
         self.cols: List[str] = None
+
+    def select(self, *items: 'DBEditor') -> 'TableSelector':
+        this = self.clone()
+        this.select_ = [val if isinstance(val, str) else val.column.columnName for val in items]
+        return this
 
     def filter(self, *condition: CompOperation) -> 'TableSelector':
         this = self.clone()
         this.condition = condition
         return this
 
-    def limit(self, limit_num: int = 1):
+    def limit(self, limit_num: int = 1) -> 'TableSelector':
         this = self.clone()
         this.limit_ = limit_num
         return this
 
-    def first(self):
+    def first(self) -> 'TableSelector':
         return self.limit(1)
 
-    def order_by(self, order: str):
+    def order_by(self, *order: str) -> 'TableSelector':
         this = self.clone()
         this.order_by_ = order
-
-    def execute(self):
-        if self.cursor is None:
-            raise ValueError('No cursor given')
-        if not self.select:
-            cols = self.cols
-        else:
-            cols = self.select
-        self.cursor.execute(self.sql)
-        result = self.cursor.fetchall()
-        if self.limit_ == 1:
-            return {k: v for k, v in zip(cols, result[0])}
-        return [{k: v for k, v in zip(cols, row)} for row in result]
-
-    @property
-    def sql(self):
-        select = 'SELECT ' + ('*' if not self.select else ', '.join(self.select))
-        from_ = f' FROM {self.table}'
-        condition = ' WHERE ' + ' AND '.join(map(str, self.condition))
-        limit = f' LIMIT {self.limit_}'
-        order_by = f' ORDER BY {self.order_by_}'
-
-        query = select + from_
-        if self.condition:
-            query += condition
-        if self.limit_:
-            query += limit
-        if self.order_by_:
-            query += order_by
-
-        return query
+        return this
 
     def clone(self):
         this = TableSelector(None, clone=True)
         this.table = self.table
-        this.select = self.select
+        this.select_ = self.select_
         this.condition = self.condition
         this.limit_ = self.limit_
         this.order_by_ = self.order_by_
@@ -276,6 +253,125 @@ class TableSelector:
         this.cols = self.cols
 
         return this
+
+    @property
+    def select_query(self):
+        select = 'SELECT ' + ('*' if not self.select_ else ', '.join(self.select_))
+        from_ = f' FROM {self.table}'
+        condition = ' WHERE ' + ' AND '.join(map(str, self.condition))
+        limit = f' LIMIT {self.limit_}'
+        order = []
+        for od in self.order_by_:
+            if isinstance(od, DBEditor):
+                order.append(f'{od.columnName} {"ASC" if od.positive else "DESC"}')
+            else:
+                order.append(f'{od} ASC')
+        order_by = f' ORDER BY {", ".join(order)}'
+
+        query = select + from_
+        if self.condition:
+            query += condition
+        if self.order_by_:
+            query += order_by
+        if self.limit_:
+            query += limit
+
+        return query
+
+    @property
+    def delete_query(self):
+        from_ = f'DELETE FROM {self.table}'
+        condition = ' WHERE ' + ' AND '.join(map(str, self.condition))
+        limit = f' LIMIT {self.limit_}'
+        order = []
+        for od in self.order_by_:
+            if isinstance(od, DBEditor):
+                order.append(f'{od.columnName} {"ASC" if od.positive else "DESC"}')
+            else:
+                order.append(f'{od} ASC')
+        order_by = f' ORDER BY {", ".join(order)}'
+
+        query = from_
+        if self.condition:
+            query += condition
+        if self.order_by_:
+            query += order_by
+        if self.limit_:
+            query += limit
+        print(query)
+
+        return query
+
+    def insert_query(self, values):
+        if isinstance(values, str):
+            values = [values]
+        if len(self.cols) != len(values):
+            raise ValueError('Not matching length for selected values')
+        return f'INSERT INTO {self.table} VALUES ({", ".join(repr(val) for val in values)})'
+
+
+    def update_query(self, values):
+        update = f'UPDATE {self.table}'
+        if isinstance(values, str):
+            values = [values]
+        if len(values) != len(self.select_):
+            print(values, self.select_)
+            raise ValueError('Not matching length for selected values')
+        set = f' SET ' + (', '.join(f'{key} = {repr(val)}' for key, val in zip(self.select_, values)))
+        condition = ' WHERE ' + ' AND '.join(map(str, self.condition))
+        limit = f' LIMIT {self.limit_}'
+        order = []
+        for od in self.order_by_:
+            if isinstance(od, DBEditor):
+                order.append(f'{od.columnName} {"ASC" if od.positive else "DESC"}')
+            else:
+                order.append(f'{od} ASC')
+        order_by = f' ORDER BY {", ".join(order)}'
+
+        query = update + set
+        if self.condition:
+            query += condition
+        if self.order_by_:
+            query += order_by
+        if self.limit_:
+            query += limit
+
+        return query
+
+    def delete(self):
+        if self.cursor is None:
+            raise ValueError('No cursor given')
+        self.cursor.execute(self.delete_query)
+
+
+    def insert(self, values):
+        if self.cursor is None:
+            raise ValueError('No cursor given')
+        self.cursor.execute(self.insert_query(values))
+
+    def get(self) -> dict:
+        if self.cursor is None:
+            raise ValueError('No cursor given')
+        if not self.select_:
+            cols = self.cols
+        else:
+            cols = self.select_
+        self.cursor.execute(self.select_query)
+        result = self.cursor.fetchall()
+        if self.limit_ == 1:
+            return {k: v for k, v in zip(cols, result[0])}
+        return [{k: v for k, v in zip(cols, row)} for row in result]
+
+    def __setitem__(self, key, item):
+        if self.cursor is None:
+            raise ValueError('No cursor given')
+        if not isinstance(key, (tuple, list)):
+            key = [key]
+        if not isinstance(item, (tuple, list)):
+            item = [item]
+        this = self.select(*key)
+        this.cursor.execute(this.update_query(item))
+
 
 class DBEditor:
     def __init__(self, environment: Environment, cursor_name: str, clone: bool = False):
@@ -295,6 +391,7 @@ class DBEditor:
 
         self.table = None
         self.column = None
+        self.positive = True
 
     def clone(self) -> 'DBEditor':
         this = DBEditor(None, '', True)
@@ -306,6 +403,7 @@ class DBEditor:
 
         this.table = self.table
         this.column = self.column
+        this.positive = self.positive
 
         return this
 
@@ -329,53 +427,74 @@ class DBEditor:
         if isinstance(other, DBEditor):
             pass
         return CompOperation(self, Operation.Equal, [other])
+
     def __ne__(self, other):
         if isinstance(other, DBEditor):
             pass
         return CompOperation(self, Operation.NotEqual, [other])
+
     def in_(self, other):
         if isinstance(other, DBEditor):
             pass
         return CompOperation(self, Operation.In, [*other])
+
     def not_in_(self, other):
         if isinstance(other, DBEditor):
             pass
         return CompOperation(self, Operation.NotIn, [*other])
+
     def between(self, bottom, top):
         if isinstance(bottom, DBEditor) or isinstance(top, DBEditor):
             pass
         return CompOperation(self, Operation.Between, [bottom, top])
+
     def not_between(self, bottom, top):
         if isinstance(bottom, DBEditor) or isinstance(top, DBEditor):
             pass
         return CompOperation(self, Operation.NotBetween, [bottom, top])
+
     def like(self, other):
         if isinstance(other, DBEditor):
             pass
         return CompOperation(self, Operation.Like, [other])
+
     def __lt__(self, other):
         if isinstance(other, DBEditor):
             pass
         return CompOperation(self, Operation.Smaller, [other])
+
     def __le__(self, other):
         if isinstance(other, DBEditor):
             pass
         return CompOperation(self, Operation.SmallerEq, [other])
+
     def __gt__(self, other):
         if isinstance(other, DBEditor):
             pass
         return CompOperation(self, Operation.Larger, [other])
+
     def __ge__(self, other):
         if isinstance(other, DBEditor):
             pass
         return CompOperation(self, Operation.LargerEq, [other])
 
+    def __neg__(self):
+        this = self.clone()
+        this.positive = not this.positive
+        return this
+
+    @property
+    def query(self):
+        selector = TableSelector(self.table)
+        selector.cursor = self.cursor
+        selector.cols = self.columns[self.table]
+        return selector
+
     def __getitem__(self, item):
         selector = TableSelector(self.table)
-        if isinstance(item, (tuple, list)):
-            selector.condition = item
-        else:
-            selector.condition = [item]
+        if not isinstance(item, (tuple, list)):
+            item = [item]
+        selector.condition = item
         selector.cursor = self.cursor
         selector.cols = self.columns[self.table]
         return selector
