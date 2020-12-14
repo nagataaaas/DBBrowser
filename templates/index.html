@@ -1,19 +1,35 @@
 {% extends 'layout.html' %}
 {% block content %}
-    <div id="python-exec-wrapper">
-        <div id="python-input-exec">
-            <button id="python-run-btn-exec" type="button">RUN ▶</button>
-            <textarea id="python-exec-error" readonly>
-            </textarea>
-            <button id="hide-text-area" type="button">&#10006;</button>
-        </div>
-        <div id="python-result-exec"></div>
+    <div id="app-container">
+        <div id="app">
+            <div id="db-wrapper">
+                <div id="db-top-bar">
+                    <div id="db-reload" v-on:click="reloadDB()"><i class="fa fa-refresh" id="db-reload-btn"
+                                                                   style="font-size:36px;"></i></div>
+                    <input id="db-cursor-name" type="text" maxlength="20" placeholder="cursor name here..."
+                           value="sample_c">
+                </div>
+                <div id="table-wrapper">
+                    <db-table :table="table" v-for="table in tables">
+                    </db-table>
+                </div>
 
+            </div>
+        </div>
+        <div id="python-exec-wrapper">
+            <div id="python-input-exec">
+                <button id="python-run-btn-exec" type="button">RUN ▶</button>
+                <button type="button" id="file-upload">UPLOAD <i class="fa fa-database" aria-hidden="true"></i></button>
+                <textarea id="python-exec-error" readonly>
+            </textarea>
+                <button id="hide-text-area" type="button">&#10006;</button>
+            </div>
+            <div id="python-result-exec"></div>
+
+        </div>
     </div>
 
-    <form id="file-form"><input type="file" name="file">
-        <button type="button" id="file-upload">upload</button>
-    </form>
+    <form id="file-form"><input type="file" name="file" id="db-file" hidden></form>
 
     <script>
         var require = {
@@ -31,6 +47,8 @@
     <script src="/static/min/vs/editor/editor.main.nls.ja.js"></script>
 
     <script>
+        Vue.use(window.vueGoodTable.default);
+
         var editor;
         var session;
 
@@ -46,11 +64,9 @@
                 }
             });
         */
-        let initializer = setInterval(() => {
-            text = Cookies.get('history');
-            resultText = '# result will pop here\n# and note that this box is READONLY';
-            const cookieFoundButNoEnv = `# We received your sessionID.\n# but couldn\'t find any existing environment matches to it :(\n\n`
-            const defaultText = `# there is a sample database connection already
+
+        const cookieFoundButNoEnv = `# We received your sessionID.\n# but couldn\'t find any existing environment matches to it :(\n\n`
+        let defaultText = `# there is a sample database connection already
 
 # get all tables
 sample_c.execute("SELECT name FROM sqlite_master WHERE type='table';")
@@ -67,6 +83,24 @@ column_name = map(lambda x: x[0], sample_c.description)
 from pprint import pprint
 
 pprint({k: v for k, v in zip(column_name, data)})`;
+        let defaultTextToReplace = `# get all tables
+#cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+tables = #cursor.fetchall()
+print('All tables:', '; '.join([table[0] for table in tables]))
+
+# get a single row of data from the very first table
+#cursor.execute('SELECT * FROM %s LIMIT 1' % tables[0])
+data = #cursor.fetchone()
+
+#cursor.execute('SELECT * FROM %s' % tables[0])
+column_name = map(lambda x: x[0], #cursor.description)
+
+from pprint import pprint
+
+pprint({k: v for k, v in zip(column_name, data)})`;
+        let initializer = setInterval(() => {
+            text = Cookies.get('history');
+            resultText = '# result will pop here\n# and note that this box is READONLY';
             if ({{ is_new }}) {
                 if (text !== undefined) {
                     text = cookieFoundButNoEnv + defaultText;
@@ -76,6 +110,9 @@ pprint({k: v for k, v in zip(column_name, data)})`;
             } else {
                 if (Cookies.get('result') !== undefined) {
                     resultText = Cookies.get('result');
+                }
+                if (Cookies.get('cursor') !== undefined) {
+                    $('#db-cursor-name').val(Cookies.get('cursor'))
                 }
             }
             session = monaco.editor.createModel(text, 'python');
@@ -98,14 +135,16 @@ pprint({k: v for k, v in zip(column_name, data)})`;
                 result.layout();
             };
             $('#python-run-btn-exec').css('visibility', 'visible');
+            $('#file-upload').css('visibility', 'visible');
             clearInterval(initializer);
             setInterval(() => {
                 Cookies.set('history', editor.getValue())
             }, 100000)
         }, 100)
-    </script>
-    <script>
-        $('#file-upload').on('click', () => {
+
+
+        $('#db-file').on('change', () => {
+            if ($('#db-file')[0].value == '') return;
             let formData = new FormData($('#file-form')[0]);
             formData.append('sessionId', Cookies.get('sessionId'));
 
@@ -126,11 +165,21 @@ pprint({k: v for k, v in zip(column_name, data)})`;
                     result.setValue(before);
                     $('#python-exec-error').css('visibility', 'hidden');
                     $('#hide-text-area').css('visibility', 'hidden');
+                    if ((editor.getValue() === cookieFoundButNoEnv + defaultText) | (editor.getValue() === defaultText) | editor.getValue() === '') {
+                        editor.setValue(defaultTextToReplace.replace(/#cursor/g, data.cursor))
+                    }
+
+                    $('#db-cursor-name').val(data.cursor)
+                    Cookies.set('cursor', data.cursor)
                 })
                 .fail((data) => {
                     console.log(data)
                     alert('error');
                 });
+        })
+        $('#file-upload').on('click', () => {
+            $('#db-file').click();
+
         })
 
         $pythonInputExec = $('#python-input-exec');
@@ -158,6 +207,11 @@ pprint({k: v for k, v in zip(column_name, data)})`;
                     $('#hide-text-area').css('visibility', 'hidden');
                 })
                 .fail((data) => {
+
+                    if (data.status === 404) {
+                        location.reload();
+                        return
+                    }
                     console.log(data)
                     let res = data.responseJSON.result;
                     if (res !== undefined) {
@@ -173,9 +227,112 @@ pprint({k: v for k, v in zip(column_name, data)})`;
                 });
         })
 
+        const getCursorName = () => {
+            return $('#db-cursor-name').val();
+        }
+
+        const getCursorTables = () => {
+
+        }
+
         $('#hide-text-area').on('click', () => {
             $('#python-exec-error').css('visibility', 'hidden');
             $('#hide-text-area').css('visibility', 'hidden');
         })
+
+        Vue.component('db-table', {
+            props: ['table'],
+            data: function () {
+                return {
+
+                    columns: [
+                        {
+                            label: 'Column Name',
+                            field: 'columnName',
+                        },
+                        {
+                            label: 'Not Null',
+                            field: 'notNull',
+                            type: 'boolean',
+                        },
+                        {
+                            label: 'Default',
+                            field: 'default',
+                            html: true,
+                        },
+                        {
+                            label: 'PrimaryKey',
+                            field: 'primaryKey',
+                            type: 'boolean',
+                        },
+                        {
+                            label: 'Indexed',
+                            field: 'indexed',
+                            type: 'boolean',
+                        },
+                    ]
+                }
+            },
+            delimiters: ["[[", "]]"],
+            template: `
+                        <details class="table-detail">
+                            <summary class="table-summary">[[ table.tableName ]]</summary>
+<div class="table-body">
+                        <vue-good-table :row-style-class="nullGray" :line-numbers="true" :columns="columns" :rows="table.columns"
+:search-options="{
+    enabled: true,
+    skipDiacritics: true,
+    searchFn: mySearchFn,
+    placeholder: 'Search this table',
+    externalQuery: searchQuery
+  }" :pagination-options="{
+    enabled: true,
+    mode: 'records',
+    perPage: 10,
+    position: 'top',
+    dropdownAllowAll: false,
+    nextLabel: 'next',
+    prevLabel: 'prev',
+    rowsPerPageLabel: 'Rows per page',
+    ofLabel: 'of',
+    pageLabel: 'page', // for 'pages' mode
+    allLabel: 'All',
+  }" max-height="30vh"></vue-good-table></div></details>`,
+            methods: {
+                nullGray(row) {
+                    return row.default == null ? 'nullGray' : '';
+                }
+            }
+        })
+
+        var app = new Vue({
+            el: '#app',
+            data:
+                function () {
+                    return {
+                        tables: []
+                    }
+                },
+            delimiters: ["[[", "]]"],
+            methods: {
+                reloadDB: function () {
+                    let cursorName = $('#db-cursor-name').val();
+                    $.ajax({
+                        url: '{{ endpoints['db_info']() }}',
+                        type: 'GET',
+                        data: {
+                            cursorName: cursorName
+                        },
+                        dataType: 'json'
+                    })
+                        .done((data) => {
+                            this.tables = data.tables
+                        })
+                        .fail((data) => {
+                            console.log(data)
+                        });
+                }
+            }
+        });
     </script>
 {% endblock %}

@@ -10,11 +10,15 @@ import traceback
 from utils import stdoutIO
 from fastapi.encoders import jsonable_encoder
 from pathlib import Path
-
+from utils import reload_or_None
 from scheme import *
 import os
 import shutil
 from models import Environment
+import glob
+import sqlite3
+
+from typing import Dict
 
 app = FastAPI(
     title='Online Database Query Executor',
@@ -28,7 +32,7 @@ jinja_env = templates.env
 
 endpoints: [str, partial] = {}
 
-env: dict[str, Environment] = {}
+env: Dict[str, Environment] = {}
 
 
 def update_endpoint():
@@ -36,7 +40,8 @@ def update_endpoint():
     endpoints = {
         'index': partial(app.url_path_for, name=index.__name__),
         'run_python': partial(app.url_path_for, name=run_python.__name__),
-        'upload_db': partial(app.url_path_for, name=upload_db.__name__)
+        'upload_db': partial(app.url_path_for, name=upload_db.__name__),
+        'db_info': partial(app.url_path_for, name=db_info.__name__)
     }
 
 
@@ -50,7 +55,7 @@ async def index(req: Request, session_id: Optional[str] = Cookie(None, descripti
                                                              'request': req,
                                                              'is_new': 'false'})
         return response
-    new_env = Environment()
+    new_env = reload_or_None(sessionId=session_id) or Environment()
 
     env[new_env.session_id] = new_env
     response = templates.TemplateResponse('index.html', {'endpoints': endpoints, 'request': req,
@@ -90,8 +95,11 @@ async def run_python(sessionId: str = Form(..., description='The session id. sto
                                              regex='(exec|eval)')):
     result = None
     if sessionId not in env:
-        return JSONResponse(jsonable_encoder(EnvironmentNotFound), 404)
-    env[sessionId].history = code
+        new_env = reload_or_None(sessionId=sessionId)
+        if not new_env:
+            return JSONResponse(jsonable_encoder(EnvironmentNotFound()), 404)
+        env[new_env.session_id] = new_env
+
     if executeType == 'exec':
         try:
             with stdoutIO() as s:
@@ -115,9 +123,20 @@ def health(req: Request):
     return {'health': 'ok'}
 
 
-@app.post('/api/upload/db', response_model=DatabaseUploadResult)
+@app.post('/api/upload/db', response_model=DatabaseUploadResult,
+          responses={
+              404: {'model': EnvironmentNotFound,
+                    'description': 'when the environment match to sessionId is not found.'},
+              200: {'model': DatabaseUploadResult, 'description': 'uploaded file and loaded to environment.'}
+          })
 async def upload_db(sessionId: str = Form(..., description='The session id. stored in cookie'),
                     file: UploadFile = File(..., description='database file which can open with sqlite3 in python3')):
+    if sessionId not in env:
+        new_env = reload_or_None(sessionId=sessionId)
+        if not new_env:
+            return JSONResponse(jsonable_encoder(EnvironmentNotFound()), 404)
+        env[new_env.session_id] = new_env
+
     db_dir = './static/db'
     extension = Path(file.filename).suffix or 'db'
     new_file_base = sessionId + uuid4().hex
@@ -128,6 +147,29 @@ async def upload_db(sessionId: str = Form(..., description='The session id. stor
     conn, c, file_var = env[sessionId].add_db(filepath)
     return JSONResponse(jsonable_encoder(DatabaseUploadResult(connection=conn, cursor=c,
                                                               filepathVar=file_var, filepath=repr(filepath))))
+
+
+@app.get('/api/db/info',
+         responses={
+             404: {'model': EnvironmentNotFound,
+                   'description': 'when the environment match to sessionId is not found.'},
+             400: {'model': CursorNotFound,
+                   'description': 'when the cursor match to cursorName is not found.'},
+             200: {'model': DatabaseUploadResult, 'description': 'uploaded file and loaded to environment.'}
+         })
+
+async def db_info(cursorName: str, sessionId: str = Cookie(None, description='the session_id. '
+                                                                       'can continue environment '
+                                                                       'with existing session_id',
+                                                     alias='sessionId', )):
+    if sessionId not in env:
+        return JSONResponse(jsonable_encoder(EnvironmentNotFound()), 404)
+    try:
+        result = env[sessionId].get_db_info(cursorName)
+    except (ValueError, TypeError):
+        return JSONResponse(jsonable_encoder(CursorNotFound()), 400)
+
+    return JSONResponse(jsonable_encoder(result))
 
 
 update_endpoint()

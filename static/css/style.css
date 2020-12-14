@@ -1,6 +1,52 @@
+#app-container {
+    display: flex;
+    flex-direction: row;
+    background: #d7d7d7;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+#app {
+    width: 40vw;
+    height: 100vh;
+    background: #333333;
+    margin: 0;
+}
+
+#db-top-bar {
+    display: flex;
+    flex-direction: row;
+    height: 45px;
+}
+
+#db-reload-btn {
+    display: inline-block;
+    background: #a3b86b;
+    color: white;
+    font-size: 1.5em;
+    height: 45px;
+    width: 45px;
+    text-align: center;
+    vertical-align: middle;
+    padding: 0.1em;
+}
+
+#db-cursor-name {
+    width: 100%;
+    background: #51504f;
+    color: #e0b662;
+    border: none;
+}
+
+#table-wrapper {
+    height: calc(100vh - 45px);
+    overflow: scroll;
+}
+
 #python-exec-wrapper {
-    width: 60%;
-    height: 60vw;
+    width: calc(60vw - 14px);
+    height: 100vh;
     margin: 0;
 }
 
@@ -24,6 +70,23 @@
     font-size: 1.5em;
     background: #018786;
     width: 4em;
+    height: 2em;
+    color: white;
+    vertical-align: middle;
+    text-align: center;
+}
+
+#file-upload {
+    position: absolute;
+    visibility: hidden;
+    font-family: Consolas, "Courier New", monospace;
+    right: 5em;
+    bottom: 0;
+    z-index: 4;
+    border: none;
+    font-size: 1.5em;
+    background: #c87955;
+    width: 6em;
     height: 2em;
     color: white;
     vertical-align: middle;
@@ -62,4 +125,38 @@
     top: 65%;
     right: 0;
     z-index: 5;
+}
+
+.null {
+    color: #d4d4d4;
+}
+
+.table-summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 20px;
+    background: #e4e4e4;
+    color: #242323;
+    font-weight: bold;
+    border-bottom: 1px solid #ccc;
+
+}
+
+.table-summary::-webkit-details-marker {
+    display: none;
+}
+
+.table-summary::before {
+    font-family: FontAwesome;
+    content: '\f067';
+    margin-right: 20px;
+}
+
+.table-detail[open] summary::before {
+    content: '\f068';
+}
+
+.table-body table.vgt-table{
+    padding-left: 1em;
+    font-size: 0.8em !important;
 }
