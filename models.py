@@ -357,14 +357,14 @@ class TableSelector:
             raise ValueError('No cursor given')
         self.cursor.execute(self.insert_query(values))
 
-    def get(self) -> dict:
+    def get(self, query='') -> dict:
         if self.cursor is None:
             raise ValueError('No cursor given')
         if not self.select_:
             cols = self.cols
         else:
             cols = self.select_
-        self.cursor.execute(self.select_query)
+        self.cursor.execute(query or self.select_query)
         result = self.cursor.fetchall()
         if self.limit_ == 1:
             return {k: v for k, v in zip(cols, result[0])}

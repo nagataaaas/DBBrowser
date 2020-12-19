@@ -23,7 +23,10 @@
                     <div id="query-wrapper">
                         <div>
                             <input id="query-input" type="text" placeholder="query here..." v-on:change="reloadTable()">
-                            <input id="is-python" type="checkbox" v-on:change="reloadTable()">
+                            <label class="setting-label">Python:<input id="is-python" type="checkbox"
+                                                                       v-on:change="reloadTable()"></label>
+                            <label class="setting-label">Full:<input id="full-query" type="checkbox"
+                                                                     v-on:change="reloadTable()"></label>
                         </div>
                     </div>
                 </div>
@@ -200,6 +203,11 @@ pprint({k: v for k, v in zip(column_name, data)})`;
                     Cookies.set('cursor', data.cursor)
                 })
                 .fail((data) => {
+                    if (data.status === 404) {
+                        if (window.confirm('looks like the connection is no longer alive.\nwant to reload?')) {
+                            location.reload()
+                        }
+                    }
                     console.log(data)
                     alert('error');
                 });
@@ -236,8 +244,9 @@ pprint({k: v for k, v in zip(column_name, data)})`;
                 .fail((data) => {
 
                     if (data.status === 404) {
-                        location.reload();
-                        return
+                        if (window.confirm('looks like the connection is no longer alive.\nwant to reload?')) {
+                            location.reload()
+                        }
                     }
                     console.log(data)
                     let res = data.responseJSON.result;
@@ -276,6 +285,10 @@ pprint({k: v for k, v in zip(column_name, data)})`;
                         {
                             label: 'Column Name',
                             field: 'columnName',
+                        },
+                        {
+                            label: 'Column Type',
+                            field: 'columnType',
                         },
                         {
                             label: 'Not Null',
@@ -344,10 +357,12 @@ pprint({k: v for k, v in zip(column_name, data)})`;
                             {
                                 label: 'Column1',
                                 field: 'column1',
+                                type: 'number'
                             },
                             {
                                 label: 'Column2',
                                 field: 'column2',
+                                type: 'number'
                             }
                         ],
                         table_info: [
@@ -378,6 +393,11 @@ pprint({k: v for k, v in zip(column_name, data)})`;
                             this.tables = data.tables
                         })
                         .fail((data) => {
+                            if (data.status === 404) {
+                                if (window.confirm('looks like the connection is no longer alive.\nwant to reload?')) {
+                                    location.reload()
+                                }
+                            }
                             console.log(data)
                         });
                 },
@@ -391,8 +411,11 @@ pprint({k: v for k, v in zip(column_name, data)})`;
                     let cursorName = $('#db-cursor-name').val();
                     let tableName = $('#focus-table-name').val();
                     let query = $('#query-input').val();
-                    let python = $('#is-python').prop('checked')
-                    console.log(offset, limit, cursorName, tableName);
+                    let python = $('#is-python').prop('checked');
+                    let fullQuery = $('#full-query').prop('checked');
+                    if (fullQuery) {
+                        $('#is-python').prop('checked', false);
+                    }
                     $.ajax({
                         url: '{{ endpoints['table_data']() }}',
                         type: 'GET',
@@ -403,22 +426,53 @@ pprint({k: v for k, v in zip(column_name, data)})`;
                             cursorName: cursorName,
                             sessionId: Cookies.get('sessionId'),
                             query: query,
-                            python: python
+                            python: python,
+                            fullQuery: fullQuery
                         },
                         dataType: 'json'
                     })
                         .done((data) => {
                             console.log(data)
+                            let cols = (() => {
+                                for (tbname of this.tables) {
+                                    if (tbname.tableName === tableName) {
+                                        let map = new Map();
+                                        for (col of tbname.columns) {
+                                            map.set(col.columnName, col.columnType)
+                                        }
+                                        map.set('index', 'INTEGER')
+                                        return map;
+                                    }
+                                }
+                            })()
+                            console.log(cols)
                             this.columns_info = data.columns.map((text) => {
+                                let type;
+                                if (['tinyint', 'smallint', 'mediumint', 'int', 'bigint', 'float', 'double', 'decimal',
+                                    'numeric', 'integer', 'real'].includes(cols.get(text).toLowerCase())) {
+                                    type = 'number'
+                                } else if (['date', 'time', 'datetime', 'timestamp', 'year'].includes(cols.get(text).toLowerCase())) {
+                                    type = 'date'
+                                } else {
+                                    type = 'text'
+                                }
                                 return {
                                     label: text,
                                     field: text,
+                                    type: type
                                 }
                             })
+                            $('#query-input').removeClass('query-error');
                             this.table_info = data.data
                         })
                         .fail((data) => {
-                            console.log(data)
+                            if (data.status === 404) {
+                                if (window.confirm('looks like the connection is no longer alive.\nwant to reload?')) {
+                                    location.reload()
+                                }
+                            }
+                            $('#query-input').addClass('query-error');
+                            console.log(data);
                         });
                 }
             }

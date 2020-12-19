@@ -178,7 +178,7 @@ async def db_info(cursorName: str, sessionId: str = Cookie(None, description='th
     200: {'model': DatabaseColumnData, 'description': 'The data of database.'}
 })
 async def table_data(cursorName: str, tableName: str, offset: int, limit: int, sessionId: str, query: str,
-                     python: bool):
+                     python: bool, fullQuery: bool):
     if sessionId not in env:
         return JSONResponse(jsonable_encoder(EnvironmentNotFound()), 404)
     try:
@@ -192,16 +192,18 @@ async def table_data(cursorName: str, tableName: str, offset: int, limit: int, s
                 query_ = editor.__getitem__(eval(query, loc))
                 result.data = list(query_.limit(limit).offset(offset).get())
             else:
-                query_ = editor.query
-                query_.condition = [query]
-                result.data = list(query_.limit(limit).offset(offset).get())
+                if fullQuery:
+                    result.data = list(editor.query.get(query))
+                else:
+                    query_ = editor.query
+                    query_.condition = [query]
+                    result.data = list(query_.limit(limit).offset(offset).get())
         else:
             query_ = editor.query
             result.data = list(query_.limit(limit).offset(offset).get())
+        result.columns = ['index'] + list(result.data[0].keys())
         for ind, dat in enumerate(result.data, offset + 1):
             dat['index'] = ind
-        result.columns = ['index'] + list(
-            DBEditor(env[sessionId], cursorName).__getattr__(tableName).query.limit(1).get().keys())
     except (ValueError, TypeError):
         raise
         return JSONResponse(jsonable_encoder(CursorNotFound()), 400)

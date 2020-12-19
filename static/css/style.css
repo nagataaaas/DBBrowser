@@ -156,12 +156,12 @@
     content: '\f068';
 }
 
-.table-body table.vgt-table{
+.table-body table.vgt-table {
     padding-left: 1em;
     font-size: 0.8em !important;
 }
 
-.focus{
+.focus {
     float: right;
     border: 1px solid #51504f;
     width: 2.5em;
@@ -171,7 +171,7 @@
     top: -0.75em;
 }
 
-.hidden{
+.hidden {
     display: none !important;
 }
 
@@ -201,7 +201,7 @@
     border: none;
 }
 
-.num-label{
+.num-label {
     background: #51504f;
     border: none;
     color: #a99360;
@@ -215,19 +215,35 @@
     overflow: scroll;
 }
 
-.data-row > td{
+.data-row > td {
     max-height: 4em;
 }
 
-#db-focus-wrapper{
+#db-focus-wrapper {
     display: flex;
     flex-direction: column;
 }
 
-#query-input{
-    width: 95%;
+#query-input {
+    width: calc(100% - 17em);
 }
 
-#is-python{
-    width: 4%;
+.setting-label {
+    background: #51504f;
+    border: none;
+    color: #a99360;
+    vertical-align: middle;
+    display: inline-block;
+    font-size: 0.8em;
+    width: 10em;
+    margin: 0;
+}
+
+.query-error {
+    background: #ae6161;
+    color: #c6b66c;
+}
+
+#query-wrapper {
+    background: #51504f;
 }
