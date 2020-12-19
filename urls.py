@@ -1,25 +1,22 @@
-from functools import partial
-
-from fastapi import FastAPI, Response, Form, UploadFile, File, Cookie
-from fastapi.staticfiles import StaticFiles
-from starlette.templating import Jinja2Templates
-from starlette.requests import Request
-from fastapi.responses import HTMLResponse, JSONResponse
-from uuid import uuid4
-import traceback
-from utils import stdoutIO
-from fastapi.encoders import jsonable_encoder
-from pathlib import Path
-from utils import reload_or_None
-from scheme import *
+import copy
 import os
 import shutil
-from models import Environment, DBEditor
-import glob
-import sqlite3
-import copy
+import traceback
+from functools import partial
+from pathlib import Path
+from uuid import uuid4
 
-from typing import Dict
+from fastapi import FastAPI, Form, UploadFile, File, Cookie
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from starlette.requests import Request
+from starlette.templating import Jinja2Templates
+
+from models import Environment, DBEditor
+from scheme import *
+from utils import reload_or_None
+from utils import stdoutIO
 
 app = FastAPI(
     title='Online Database Query Executor',
@@ -180,7 +177,8 @@ async def db_info(cursorName: str, sessionId: str = Cookie(None, description='th
           'description': 'when the cursor match to cursorName is not found.'},
     200: {'model': DatabaseColumnData, 'description': 'The data of database.'}
 })
-async def table_data(cursorName: str, tableName: str, offset: int, limit: int, sessionId: str, query: str, python: bool):
+async def table_data(cursorName: str, tableName: str, offset: int, limit: int, sessionId: str, query: str,
+                     python: bool):
     if sessionId not in env:
         return JSONResponse(jsonable_encoder(EnvironmentNotFound()), 404)
     try:
@@ -192,12 +190,10 @@ async def table_data(cursorName: str, tableName: str, offset: int, limit: int, s
                 loc = copy.copy(env[sessionId].env)
                 loc.update({k: query_.__getattr__(k) for k in editor.columns[tableName.lower()]})
                 query_ = editor.__getitem__(eval(query, loc))
-                print(query_.limit(limit).offset(offset).select_query)
                 result.data = list(query_.limit(limit).offset(offset).get())
             else:
                 query_ = editor.query
                 query_.condition = [query]
-                print(query_.limit(limit).offset(offset).select_query)
                 result.data = list(query_.limit(limit).offset(offset).get())
         else:
             query_ = editor.query
