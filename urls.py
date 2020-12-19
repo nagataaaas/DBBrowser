@@ -17,6 +17,7 @@ from models import Environment, DBEditor
 from scheme import *
 from utils import reload_or_None
 from utils import stdoutIO
+from config import DEBUG
 
 app = FastAPI(
     title='Online Database Query Executor',
@@ -52,13 +53,15 @@ async def index(req: Request, session_id: Optional[str] = Cookie(None, descripti
     if session_id and session_id in env:
         response = templates.TemplateResponse('index.html', {'endpoints': endpoints,
                                                              'request': req,
-                                                             'is_new': 'false'})
+                                                             'is_new': 'false',
+                                                             'DEBUG': DEBUG})
         return response
     new_env = reload_or_None(sessionId=session_id) or Environment()
 
     env[new_env.session_id] = new_env
     response = templates.TemplateResponse('index.html', {'endpoints': endpoints, 'request': req,
-                                                         'is_new': 'true'})
+                                                         'is_new': 'true',
+                                                             'DEBUG': DEBUG})
     response.set_cookie('sessionId', new_env.session_id)
     return response
 
@@ -76,7 +79,8 @@ async def reset(req: Request, session_id: Optional[str] = Cookie(None, descripti
 
     env[new_env.session_id] = new_env
     response = templates.TemplateResponse('index.html', {'endpoints': endpoints, 'request': req,
-                                                         'is_new': 'true'})
+                                                         'is_new': 'true',
+                                                             'DEBUG': DEBUG})
     response.set_cookie('sessionId', new_env.session_id)
     return response
 
