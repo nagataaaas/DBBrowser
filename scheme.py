@@ -51,3 +51,7 @@ class DatabaseTableInfo(BaseModel):
 
 class DatabaseInfo(BaseModel):
     tables: List[DatabaseTableInfo] = []
+
+class DatabaseColumnData(BaseModel):
+    columns: List[str] = []
+    data: List[Dict[str, str]] = []

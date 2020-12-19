@@ -14,9 +14,10 @@ from utils import reload_or_None
 from scheme import *
 import os
 import shutil
-from models import Environment
+from models import Environment, DBEditor
 import glob
 import sqlite3
+import copy
 
 from typing import Dict
 
@@ -41,7 +42,8 @@ def update_endpoint():
         'index': partial(app.url_path_for, name=index.__name__),
         'run_python': partial(app.url_path_for, name=run_python.__name__),
         'upload_db': partial(app.url_path_for, name=upload_db.__name__),
-        'db_info': partial(app.url_path_for, name=db_info.__name__)
+        'db_info': partial(app.url_path_for, name=db_info.__name__),
+        'table_data': partial(app.url_path_for, name=table_data.__name__)
     }
 
 
@@ -157,11 +159,10 @@ async def upload_db(sessionId: str = Form(..., description='The session id. stor
                    'description': 'when the cursor match to cursorName is not found.'},
              200: {'model': DatabaseUploadResult, 'description': 'uploaded file and loaded to environment.'}
          })
-
 async def db_info(cursorName: str, sessionId: str = Cookie(None, description='the session_id. '
-                                                                       'can continue environment '
-                                                                       'with existing session_id',
-                                                     alias='sessionId', )):
+                                                                             'can continue environment '
+                                                                             'with existing session_id',
+                                                           alias='sessionId', )):
     if sessionId not in env:
         return JSONResponse(jsonable_encoder(EnvironmentNotFound()), 404)
     try:
@@ -169,6 +170,45 @@ async def db_info(cursorName: str, sessionId: str = Cookie(None, description='th
     except (ValueError, TypeError):
         return JSONResponse(jsonable_encoder(CursorNotFound()), 400)
 
+    return JSONResponse(jsonable_encoder(result))
+
+
+@app.get('/table_data', responses={
+    404: {'model': EnvironmentNotFound,
+          'description': 'when the environment match to sessionId is not found.'},
+    400: {'model': CursorNotFound,
+          'description': 'when the cursor match to cursorName is not found.'},
+    200: {'model': DatabaseColumnData, 'description': 'The data of database.'}
+})
+async def table_data(cursorName: str, tableName: str, offset: int, limit: int, sessionId: str, query: str, python: bool):
+    if sessionId not in env:
+        return JSONResponse(jsonable_encoder(EnvironmentNotFound()), 404)
+    try:
+        result = DatabaseColumnData()
+        editor = DBEditor(env[sessionId], cursorName).__getattr__(tableName)
+        if query:
+            if python:
+                query_ = editor
+                loc = copy.copy(env[sessionId].env)
+                loc.update({k: query_.__getattr__(k) for k in editor.columns[tableName.lower()]})
+                query_ = editor.__getitem__(eval(query, loc))
+                print(query_.limit(limit).offset(offset).select_query)
+                result.data = list(query_.limit(limit).offset(offset).get())
+            else:
+                query_ = editor.query
+                query_.condition = [query]
+                print(query_.limit(limit).offset(offset).select_query)
+                result.data = list(query_.limit(limit).offset(offset).get())
+        else:
+            query_ = editor.query
+            result.data = list(query_.limit(limit).offset(offset).get())
+        for ind, dat in enumerate(result.data, offset + 1):
+            dat['index'] = ind
+        result.columns = ['index'] + list(
+            DBEditor(env[sessionId], cursorName).__getattr__(tableName).query.limit(1).get().keys())
+    except (ValueError, TypeError):
+        raise
+        return JSONResponse(jsonable_encoder(CursorNotFound()), 400)
     return JSONResponse(jsonable_encoder(result))
 
 

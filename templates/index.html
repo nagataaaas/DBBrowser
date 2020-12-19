@@ -9,11 +9,38 @@
                     <input id="db-cursor-name" type="text" maxlength="20" placeholder="cursor name here..."
                            value="sample_c">
                 </div>
-                <div id="table-wrapper">
+                <div id="db-focus-wrapper" class="hidden">
+                    <div id="db-focus-bar">
+                        <div id="close-focus" v-on:click="closeFocus()">
+                            <i id="close-focus-btn" class="fa fa-times-circle" style="font-size:36px"></i></div>
+                        <input id="focus-table-name" type="text" maxlength="20" placeholder="table name here..."
+                               value="cards" readonly>
+                        <label class="num-label">LIMIT:<input type="number" value="20" id="limit"
+                                                              v-on:change="reloadTable()"></label>
+                        <label class="num-label">OFFSET:<input type="number" value="0" id="offset"
+                                                               v-on:change="reloadTable()"></label>
+                    </div>
+                    <div id="query-wrapper">
+                        <div>
+                            <input id="query-input" type="text" placeholder="query here..." v-on:change="reloadTable()">
+                            <input id="is-python" type="checkbox" v-on:change="reloadTable()">
+                        </div>
+                    </div>
+                </div>
+                <div id="table-wrapper" v-if="!focus">
                     <db-table :table="table" v-for="table in tables">
                     </db-table>
                 </div>
-
+                <div id="data-wrapper" v-else>
+                    <vue-good-table :columns="columns_info"
+                                    :rows="table_info"
+                                    :row-style-class="()=>{return 'data-row'}"
+                                    :search-options="{
+                                    enabled: true,
+                                    skipDiacritics: true,
+                                    placeholder: 'Search this table'
+                                  }"></vue-good-table>
+                </div>
             </div>
         </div>
         <div id="python-exec-wrapper">
@@ -274,17 +301,15 @@ pprint({k: v for k, v in zip(column_name, data)})`;
                 }
             },
             delimiters: ["[[", "]]"],
-            template: `
-                        <details class="table-detail">
-                            <summary class="table-summary">[[ table.tableName ]]</summary>
+            template: `<details class="table-detail">
+                            <summary class="table-summary"><span>[[ table.tableName ]]</span>
+<div class="focus" v-on:click="focusTable([[ table.tableName ]])"><i class="fa fa-search"></i></div></summary>
 <div class="table-body">
-                        <vue-good-table :row-style-class="nullGray" :line-numbers="true" :columns="columns" :rows="table.columns"
+                        <vue-good-table :line-numbers="true" :columns="columns" :rows="table.columns"
 :search-options="{
     enabled: true,
     skipDiacritics: true,
-    searchFn: mySearchFn,
     placeholder: 'Search this table',
-    externalQuery: searchQuery
   }" :pagination-options="{
     enabled: true,
     mode: 'records',
@@ -299,8 +324,11 @@ pprint({k: v for k, v in zip(column_name, data)})`;
     allLabel: 'All',
   }" max-height="30vh"></vue-good-table></div></details>`,
             methods: {
-                nullGray(row) {
-                    return row.default == null ? 'nullGray' : '';
+                focusTable: function (tableName) {
+                    $('#db-focus-wrapper').removeClass('hidden');
+                    $('#focus-table-name').val(tableName);
+                    this.$root.reloadTable();
+                    this.$root.focus = true;
                 }
             }
         })
@@ -310,7 +338,28 @@ pprint({k: v for k, v in zip(column_name, data)})`;
             data:
                 function () {
                     return {
-                        tables: []
+                        tables: [],
+                        focus: false,
+                        columns_info: [
+                            {
+                                label: 'Column1',
+                                field: 'column1',
+                            },
+                            {
+                                label: 'Column2',
+                                field: 'column2',
+                            }
+                        ],
+                        table_info: [
+                            {
+                                column1: 1,
+                                column2: 1
+                            },
+                            {
+                                column1: 2,
+                                column2: 2
+                            }
+                        ]
                     }
                 },
             delimiters: ["[[", "]]"],
@@ -327,6 +376,46 @@ pprint({k: v for k, v in zip(column_name, data)})`;
                     })
                         .done((data) => {
                             this.tables = data.tables
+                        })
+                        .fail((data) => {
+                            console.log(data)
+                        });
+                },
+                closeFocus: function () {
+                    $('#db-focus-wrapper').addClass('hidden');
+                    this.focus = false;
+                },
+                reloadTable: function () {
+                    let offset = parseInt($('#offset').val());
+                    let limit = parseInt($('#limit').val());
+                    let cursorName = $('#db-cursor-name').val();
+                    let tableName = $('#focus-table-name').val();
+                    let query = $('#query-input').val();
+                    let python = $('#is-python').prop('checked')
+                    console.log(offset, limit, cursorName, tableName);
+                    $.ajax({
+                        url: '{{ endpoints['table_data']() }}',
+                        type: 'GET',
+                        data: {
+                            offset: offset,
+                            limit: limit,
+                            tableName: tableName,
+                            cursorName: cursorName,
+                            sessionId: Cookies.get('sessionId'),
+                            query: query,
+                            python: python
+                        },
+                        dataType: 'json'
+                    })
+                        .done((data) => {
+                            console.log(data)
+                            this.columns_info = data.columns.map((text) => {
+                                return {
+                                    label: text,
+                                    field: text,
+                                }
+                            })
+                            this.table_info = data.data
                         })
                         .fail((data) => {
                             console.log(data)

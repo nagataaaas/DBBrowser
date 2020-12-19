@@ -213,6 +213,7 @@ class TableSelector:
         self.select_ = select
         self.condition = []
         self.limit_ = 0
+        self.offset_ = 0
         self.order_by_: List[str] = []
         self.cursor: sqlite3.Cursor = None
         self.table_info: DatabaseTableInfo = None
@@ -233,6 +234,11 @@ class TableSelector:
         this.limit_ = limit_num
         return this
 
+    def offset(self, offset_num: int = 0) -> 'TableSelector':
+        this = self.clone()
+        this.offset_ = offset_num
+        return this
+
     def first(self) -> 'TableSelector':
         return self.limit(1)
 
@@ -247,6 +253,7 @@ class TableSelector:
         this.select_ = self.select_
         this.condition = self.condition
         this.limit_ = self.limit_
+        this.offset_ = self.offset_
         this.order_by_ = self.order_by_
         this.cursor = self.cursor
         this.table_info = self.table
@@ -260,6 +267,7 @@ class TableSelector:
         from_ = f' FROM {self.table}'
         condition = ' WHERE ' + ' AND '.join(map(str, self.condition))
         limit = f' LIMIT {self.limit_}'
+        offset = f' OFFSET {self.offset_}'
         order = []
         for od in self.order_by_:
             if isinstance(od, DBEditor):
@@ -275,6 +283,8 @@ class TableSelector:
             query += order_by
         if self.limit_:
             query += limit
+        if self.offset_:
+            query += offset
 
         return query
 
@@ -309,7 +319,6 @@ class TableSelector:
             raise ValueError('Not matching length for selected values')
         return f'INSERT INTO {self.table} VALUES ({", ".join(repr(val) for val in values)})'
 
-
     def update_query(self, values):
         update = f'UPDATE {self.table}'
         if isinstance(values, str):
@@ -342,7 +351,6 @@ class TableSelector:
         if self.cursor is None:
             raise ValueError('No cursor given')
         self.cursor.execute(self.delete_query)
-
 
     def insert(self, values):
         if self.cursor is None:
@@ -421,7 +429,7 @@ class DBEditor:
         if self.column is not None:
             if hasattr(self.column, item):
                 return getattr(self.column, item)
-        raise AttributeError
+        raise AttributeError('No attribute found: {}'.format(item))
 
     def __eq__(self, other):
         if isinstance(other, DBEditor):
