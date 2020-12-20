@@ -357,14 +357,16 @@ class TableSelector:
             raise ValueError('No cursor given')
         self.cursor.execute(self.insert_query(values))
 
+    def update(self, values):
+        if self.cursor is None:
+            raise ValueError('No cursor given')
+        self.cursor.execute(self.update_query(values))
+
     def get(self, query='') -> dict:
         if self.cursor is None:
             raise ValueError('No cursor given')
-        if not self.select_:
-            cols = self.cols
-        else:
-            cols = self.select_
         self.cursor.execute(query or self.select_query)
+        cols = list(map(lambda x: x[0], self.cursor.description))
         result = self.cursor.fetchall()
         if self.limit_ == 1:
             return {k: v for k, v in zip(cols, result[0])}
@@ -421,7 +423,7 @@ class DBEditor:
                 new = self.clone()
                 new.table = item
                 return new
-        if self.column is None:
+        elif self.column is None:
             if item in self.columns[self.table]:
                 new = self.clone()
                 new.column = self.columns[self.table][item]
@@ -495,7 +497,7 @@ class DBEditor:
     def query(self):
         selector = TableSelector(self.table)
         selector.cursor = self.cursor
-        selector.cols = self.columns[self.table]
+        selector.cols = self.table and self.columns[self.table]
         return selector
 
     def __getitem__(self, item):

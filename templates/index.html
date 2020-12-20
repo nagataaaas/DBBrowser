@@ -1,5 +1,151 @@
 {% extends 'layout.html' %}
 {% block content %}
+    <div id="cover"></div>
+    <div id="cover-color"></div>
+    <div id="db-toolbar-stuff" class="hidden right-stuff">
+        <h1>Database cursor bar</h1>
+        <p>type here the variable name of cursor</p>
+        <p>hit the reload button to show the structure of the selected table</p>
+        <div class="bottom-right"><p>click somewhere to next =></p></div>
+    </div>
+    <div id="table-structure-stuff" class="hidden right-stuff">
+        <h1>Table structure</h1>
+        <p>Now, all the tables in the database you selected are shown.</p>
+        <p>click the name of table to show the details of that table.</p>
+        <div class="bottom-right"><p>click somewhere to next =></p></div>
+    </div>
+    <div id="table-details-stuff" class="hidden right-stuff">
+        <h1>Table details</h1>
+        <p>You can see the <kbd>[Column Name, Column Type, Not Null, Default, PrimaryKey, indexed]</kbd>.</p>
+        <p>This info will help you coding with block in the right.</p>
+        <p>You can click the <kbd>Loupe Button</kbd> to see the actual data.</p>
+        <div class="bottom-right"><p>click somewhere to next =></p></div>
+    </div>
+    <div id="table-data-stuff" class="hidden right-stuff">
+        <h1>Table data</h1>
+        <p>Here you can see the actual data.</p>
+        <p>You can sort by click the column name, filter by the box <br>
+            <kbd>Search this table</kbd>.</p>
+        <div class="bottom-right"><p>click somewhere to next =></p></div>
+    </div>
+    <div id="table-query-stuff" class="hidden right-stuff">
+        <h1>Query</h1>
+        <p>You can pass the query to filter and sort the data.</p>
+        <div class="bottom-right"><p>click somewhere to next =></p></div>
+    </div>
+    <div id="table-query-all-stuff" class="hidden right-stuff">
+        <h1>Full Query</h1>
+        <p>You can pass the full query to configure the detailed query.</p>
+        <p>Check the <kbd>Full</kbd> to pass full query.</p>
+        <div class="bottom-right"><p>click somewhere to next =></p></div>
+    </div>
+    <div id="table-query-python-stuff" class="hidden right-stuff">
+        <h1>Python Query</h1>
+        <p>You can pass the python code if you check <kbd>Python</kbd>.</p>
+        <p>All the <kbd>ColumnName</kbd> of the focused table are stored<br>
+            as a local variable in type of <kbd>DBEditor</kbd></p>
+        <p>Here's api below</p>
+        <div>
+            <kbd>DBEditor [compare operand] value => CompOperation</kbd><br>
+            <kbd>DBEditor.in_(iterator) => CompOperation</kbd><br>
+            <kbd>DBEditor.not_in_(iterator) => CompOperation</kbd><br>
+            <kbd>DBEditor.between(bottom, top) => CompOperation</kbd><br>
+            <kbd>DBEditor.not_between(bottom, top) => CompOperation</kbd><br>
+            <kbd>DBEditor.like(text) => CompOperation</kbd><br>
+            <kbd>!DBEditor => CompOperation</kbd>
+            <div class="api-detail">These will be evaluated as a normal sql</div>
+        </div>
+        <hr/>
+        <div>
+            <kbd>DBEditor[CompOperation | str(sql)] => TableSelector</kbd><br>
+            <kbd>DBEditor.query => TableSelector</kbd>
+            <div class="api-detail">These will be actual sql</div>
+        </div>
+        <hr/>
+        <div>
+            <kbd>TableSelector.select(*DBEditor)</kbd><br>
+            <kbd>TableSelector.filter(*(CompOperation|str(sql)))</kbd><br>
+            <kbd>TableSelector.limit(int)</kbd><br>
+            <kbd>TableSelector.offset(int)</kbd><br>
+            <kbd>TableSelector.first(int)</kbd><br>
+            <kbd>TableSelector.order_by(*(DBEditor|str(columnName)))</kbd><br>
+            <div class="api-detail">These will set sql property</div>
+        </div>
+        <hr/>
+        <div>
+            <kbd>TableSelector.get(query='')</kbd><br>
+            <div class="api-detail">This will actually get the data from database. if <kbd>query</kbd> given, this will
+                run the <kbd>query</kbd>.
+            </div>
+        </div>
+        <hr/>
+        <div class="bottom-right"><p>click somewhere to next =></p></div>
+    </div>
+    <div id="table-query-python-full-stuff" class="hidden right-stuff">
+        <h1>Python Full Query</h1>
+        <p>You can pass the full python code if you check <kbd>Full</kbd> like I introduced before.</p>
+        <div class="bottom-right"><p>click somewhere to next =></p></div>
+    </div>
+    <div id="focus-tool-bar-stuff" class="hidden right-stuff">
+        <h1>Focus options</h1>
+        <p><kbd>limit</kbd> and <kbd>offset</kbd> can be set with the input box.</p>
+        <p>And you can close this data viewer and back to view the table structure by hitting the close button</p>
+        <div class="bottom-right"><p>click somewhere to next =></p></div>
+    </div>
+    <div id="move-to-right" class="hidden right-stuff">
+        <h1>That's it!</h1>
+        <p>That's it! now you can do all the things about the left box.</p>
+        <p>we are going to move onto right stuff!</p>
+        <div class="bottom-right"><p>click somewhere to next =></p></div>
+    </div>
+    <div id="python-exec-box-stuff" class="hidden left-stuff">
+        <h1>Run Python</h1>
+        <p>you can run the python in this box</p>
+        <p>Syntax highlighting and auto-completion are enabled. easy to code, fast to code.</p>
+        <p>Some values are already in locals. like <kbd>pprint.pprint</kbd>, <kbd>db_editor</kbd>, <kbd>sample_c</kbd>
+        </p>
+        <div class="bottom-right"><p>click somewhere to next =></p></div>
+    </div>
+    <div id="python-exec-stuff" class="hidden left-stuff">
+        <h1>Run Python</h1>
+        <p>Then, you can run your code with the <kbd>RUN</kbd> button.</p>
+        <p>results will be shown in the box bottom</p>
+        <div class="bottom-right"><p>click somewhere to next =></p></div>
+    </div>
+    <div id="python-error-exec-stuff" class="hidden left-stuff">
+        <h1>Errors!</h1>
+        <p>Everyone can make a mistake, because we are human beings!</p>
+        <p>This will let you know gently that you made some mistakes :)</p>
+        <div class="bottom-right"><p>click somewhere to next =></p></div>
+    </div>
+    <div id="python-db-exec-stuff" class="hidden left-stuff">
+        <h1>Touch Database!</h1>
+        <p>We can touch database from this python editor!</p>
+        <p><kbd>db_editor</kbd> will focus what you focused very before in the left box</p>
+        <p>Really useful, isn't it?</p>
+
+        <p>Here's more api below</p>
+        <div>
+            <kbd>TableSelector.delete()</kbd><br>
+            <kbd>TableSelector.insert(values)</kbd><br>
+            <kbd>TableSelector.update(values)</kbd><br>
+            <div class="api-detail"><kbd>insert</kbd> and <kbd>update</kbd> need to select columns</div>
+        </div>
+        <div class="bottom-right"><p>click somewhere to next =></p></div>
+    </div>
+    <div id="python-db-upload-stuff" class="hidden left-stuff">
+        <h1>Upload database</h1>
+        <p>You can upload your database with <kbd>UPLOAD</kbd> button</p>
+        <p>then you'll get information which is necessary to use your db</p>
+        <div class="bottom-right"><p>click somewhere to next =></p></div>
+    </div>
+    <div id="tour-end-stuff" class="hidden right-stuff">
+        <h1>Tour end!</h1>
+        <p>That's almost what you can do with this page!</p>
+        <p>Have fun and happy coding!</p>
+        <div class="bottom-right"><p>click somewhere to end</p></div>
+    </div>
+    <div id="left" class="hidden"></div>
     <div id="app-container">
         <div id="app">
             <div id="db-wrapper">
@@ -22,7 +168,8 @@
                     </div>
                     <div id="query-wrapper">
                         <div>
-                            <input id="query-input" type="text" placeholder="query here..." v-on:change="reloadTable()">
+                            <input id="query-input" type="text" placeholder="query here..."
+                                   v-on:change="reloadTable()">
                             <label class="setting-label">Python:<input id="is-python" type="checkbox"
                                                                        v-on:change="reloadTable()"></label>
                             <label class="setting-label">Full:<input id="full-query" type="checkbox"
@@ -47,9 +194,13 @@
             </div>
         </div>
         <div id="python-exec-wrapper">
-            <div id="python-input-exec">
+            <div id="python-input-exec" class="z-index-2">
                 <button id="python-run-btn-exec" type="button">RUN ▶</button>
-                <button type="button" id="file-upload">UPLOAD <i class="fa fa-database" aria-hidden="true"></i></button>
+                <button type="button" id="file-upload">UPLOAD <i class="fa fa-database" aria-hidden="true"></i>
+                </button>
+                <button type="button" id="take-me-to-tour" onclick="tour()">TOUR <i class="fa fa-paper-plane"
+                                                                                    aria-hidden="true"></i>
+                </button>
                 <textarea id="python-exec-error" readonly>
             </textarea>
                 <button id="hide-text-area" type="button">&#10006;</button>
@@ -128,6 +279,12 @@ column_name = map(lambda x: x[0], #cursor.description)
 from pprint import pprint
 
 pprint({k: v for k, v in zip(column_name, data)})`;
+        const btnVisibility = (visible) => {
+            $('#python-run-btn-exec').css('visibility', visible);
+            $('#file-upload').css('visibility', visible);
+            $('#take-me-to-tour').css('visibility', visible);
+        }
+
         let initializer = setInterval(() => {
             text = Cookies.get('history');
             resultText = '# result will pop here\n# and note that this box is READONLY';
@@ -164,8 +321,7 @@ pprint({k: v for k, v in zip(column_name, data)})`;
                 editor.layout();
                 result.layout();
             };
-            $('#python-run-btn-exec').css('visibility', 'visible');
-            $('#file-upload').css('visibility', 'visible');
+            btnVisibility('visible');
             clearInterval(initializer);
             setInterval(() => {
                 Cookies.set('history', editor.getValue())
@@ -208,7 +364,9 @@ pprint({k: v for k, v in zip(column_name, data)})`;
                             location.reload()
                         }
                     }
-                    console.log(data)
+                    {% if DEBUG %}
+                        console.log(data)
+                    {% endif %}
                     alert('error');
                 });
         })
@@ -248,7 +406,9 @@ pprint({k: v for k, v in zip(column_name, data)})`;
                             location.reload()
                         }
                     }
-                    console.log(data)
+                    {% if DEBUG %}
+                        console.log(data)
+                    {% endif %}
                     let res = data.responseJSON.result;
                     if (res !== undefined) {
                         res = res.replace(/^\s|\s$/g, '');
@@ -340,6 +500,9 @@ pprint({k: v for k, v in zip(column_name, data)})`;
                 focusTable: function (tableName) {
                     $('#db-focus-wrapper').removeClass('hidden');
                     $('#focus-table-name').val(tableName);
+                    $('#query-input').val('');
+                    $('#is-python').prop('checked', false);
+                    $('#full-query').prop('checked', false);
                     this.$root.reloadTable();
                     this.$root.focus = true;
                 }
@@ -380,7 +543,7 @@ pprint({k: v for k, v in zip(column_name, data)})`;
             delimiters: ["[[", "]]"],
             methods: {
                 reloadDB: function () {
-                    let cursorName = $('#db-cursor-name').val();
+                    let cursorName = getCursorName();
                     $.ajax({
                         url: '{{ endpoints['db_info']() }}',
                         type: 'GET',
@@ -398,7 +561,9 @@ pprint({k: v for k, v in zip(column_name, data)})`;
                                     location.reload()
                                 }
                             }
-                            console.log(data)
+                            {% if DEBUG %}
+                                console.log(data)
+                            {% endif %}
                         });
                 },
                 closeFocus: function () {
@@ -408,14 +573,11 @@ pprint({k: v for k, v in zip(column_name, data)})`;
                 reloadTable: function () {
                     let offset = parseInt($('#offset').val());
                     let limit = parseInt($('#limit').val());
-                    let cursorName = $('#db-cursor-name').val();
+                    let cursorName = getCursorName();
                     let tableName = $('#focus-table-name').val();
                     let query = $('#query-input').val();
                     let python = $('#is-python').prop('checked');
                     let fullQuery = $('#full-query').prop('checked');
-                    if (fullQuery) {
-                        $('#is-python').prop('checked', false);
-                    }
                     $.ajax({
                         url: '{{ endpoints['table_data']() }}',
                         type: 'GET',
@@ -432,7 +594,9 @@ pprint({k: v for k, v in zip(column_name, data)})`;
                         dataType: 'json'
                     })
                         .done((data) => {
-                            console.log(data)
+                            {% if DEBUG %}
+                                console.log(data)
+                            {% endif %}
                             let cols = (() => {
                                 for (tbname of this.tables) {
                                     if (tbname.tableName === tableName) {
@@ -445,7 +609,9 @@ pprint({k: v for k, v in zip(column_name, data)})`;
                                     }
                                 }
                             })()
-                            console.log(cols)
+                            {% if DEBUG %}
+                                console.log(cols)
+                            {% endif %}
                             this.columns_info = data.columns.map((text) => {
                                 let type;
                                 if (['tinyint', 'smallint', 'mediumint', 'int', 'bigint', 'float', 'double', 'decimal',
@@ -472,10 +638,453 @@ pprint({k: v for k, v in zip(column_name, data)})`;
                                 }
                             }
                             $('#query-input').addClass('query-error');
-                            console.log(data);
+                            {% if DEBUG %}
+                                console.log(data)
+                            {% endif %}
                         });
                 }
             }
         });
+
+        const tour = () => { // cursor selector
+            app.closeFocus();
+            let coverColor = $('#cover-color');
+            let cover = $('#cover');
+
+            let beforeCode = editor.getValue();
+            let beforeTable = $('#db-cursor-name').val()
+
+            coverColor.css('opacity', 0.7);
+            cover.css('pointer-events', 'auto');
+
+            $('#db-top-bar').css('position', 'relative');
+            $('#db-top-bar').css('z-index', 13);
+
+            $('#db-cursor-name').val('sample_c')
+            $('#db-toolbar-stuff').removeClass('hidden');
+
+            let tableIndex = 3;
+
+            let queryText = "name like '%ルド%'"
+            let queryTimeouts = Array(queryText.length + 1)
+
+            let queryTextFull = "select * from pokemon where name like '%ルド%' order by attack desc"
+            let queryFullTimeouts = Array(queryTextFull.length + 1)
+
+
+            let queryPython = "name.like('%ドラ%').and_(attack>100)"
+            let queryPythonTimeouts = Array(queryPython.length + 1)
+
+            let queryPythonFull = "pokemon[name.like('%ゴン%'), attack>=80].order_by(-sp_attack).get()"
+            let queryPythonFullTimeouts = Array(queryPythonFull.length + 1)
+
+            let limitOffsetTimeouts = Array(7)
+
+            let fibonacciPython = `# you are watching what you can do here!
+from functools import lru_cache
+
+
+@lru_cache(2 ** 10)
+def fibonacci(n):
+    if n < 2:
+        return n
+    return fibonacci(n - 1) + fibonacci(n - 2)
+
+
+fibonacci_numbers = {ind: fibonacci(ind) for ind in range(40)}
+
+pprint(fibonacci_numbers)
+`
+            let fibonacciPythonTimeouts = Array(fibonacciPython.length)
+
+            let pythonError = `# you are a matured programmer, but be aware of
+# the possibility that you could make a mistake.
+
+def str_to_int(text):
+    return int(text)
+
+
+# is this really works???
+print(str_to_int('Hello, World!'))
+`
+            let pythonErrorTimeouts = Array(pythonError.length + 1)
+
+            let pythonDB = `# you can touch database through this python box
+
+# specify table
+pokemon = db_editor.pokemon
+
+# I want a list of strong pokemon!
+pprint(pokemon[pokemon.total == 600, pokemon.attack > 120].select(pokemon.name, pokemon.attack).get())
+
+# or should I use SQL directry? :)
+pprint(pokemon.query.get('select name, sp_attack from pokemon where total == 600 and sp_attack > 120'))
+`
+            let pythonDBTimeouts = Array(pythonDB.length + 1)
+
+            let pythonDBUploadCode = `# now you can use this database
+
+c1.execute("SELECT name FROM sqlite_master WHERE type='table';")
+tables = c1.fetchall()
+print('All tables:', '; '.join([table[0] for table in tables]))
+`
+            let pythonDBUploadTimeouts = Array(pythonDBUploadCode.length + 1)
+
+
+            function tableStructure() { // table structure
+                $('#db-top-bar').removeAttr('style')
+
+                $('#db-reload').click();
+                let target = $('#table-wrapper')
+                target.css('position', 'relative');
+                target.css('z-index', 13);
+                $('#db-toolbar-stuff').addClass('hidden');
+                $('#table-structure-stuff').removeClass('hidden');
+
+                cover.off("click");
+                cover.on('click', tableDetail)
+            }
+
+            function tableDetail() { // table detail
+                $('#table-wrapper').removeAttr('style')
+
+                $('details.table-detail')[tableIndex].open = true
+                $($('details.table-detail')[tableIndex]).css('position', 'relative');
+                $($('details.table-detail')[tableIndex]).css('z-index', 13);
+                $('#table-structure-stuff').addClass('hidden');
+                $('#table-details-stuff').removeClass('hidden');
+
+                cover.off("click");
+                cover.on('click', tableData)
+            }
+
+            function tableData() { // table data
+                $($('details.table-detail')[1]).removeAttr('style')
+
+                $('div.focus')[tableIndex].click()
+                let waitData = setInterval(() => {
+                    if ($('#data-wrapper')[0] === undefined) {
+                        return
+                    }
+                    $('#data-wrapper').css('position', 'relative');
+                    $('#data-wrapper').css('z-index', 13);
+                    clearInterval(waitData);
+                }, 50)
+                $('#table-details-stuff').addClass('hidden');
+                $('#table-data-stuff').removeClass('hidden');
+
+                cover.off("click");
+                cover.on('click', tableQuery)
+            }
+
+            function tableQuery() { // table query
+                $('#query-wrapper').css('position', 'relative');
+                $('#query-wrapper').css('z-index', 13);
+
+                $('#table-data-stuff').addClass('hidden');
+                $('#table-query-stuff').removeClass('hidden');
+
+                queryText.split('').map((e, i) => {
+                    queryTimeouts[i] = setTimeout(() => {
+                        $('#query-input').val($('#query-input').val() + e);
+                    }, i * 90)
+                })
+
+                queryTimeouts[queryText.length] = setTimeout(() => {
+                    app.reloadTable();
+                }, queryText.length * 90)
+
+                cover.off("click");
+                cover.on('click', tableQueryFull)
+            }
+
+            function tableQueryFull() { // table query full
+                queryTimeouts.map((e, i) => {
+                    clearTimeout(e)
+                })
+                $('#table-query-stuff').addClass('hidden');
+                $('#table-query-all-stuff').removeClass('hidden');
+
+                $('#full-query').prop('checked', true);
+                $('#query-input').val('');
+
+                queryTextFull.split('').map((e, i) => {
+                    queryFullTimeouts[i] = setTimeout(() => {
+                        $('#query-input').val($('#query-input').val() + e);
+                    }, i * 30)
+                })
+
+                queryFullTimeouts[queryTextFull.length] = setTimeout(() => {
+                    app.reloadTable();
+                }, queryFullTimeouts.length * 30)
+
+                cover.off("click");
+                cover.on('click', tablePython)
+            }
+
+            function tablePython() {
+                queryFullTimeouts.map((e, i) => {
+                    clearTimeout(e)
+                })
+                $('#table-query-all-stuff').addClass('hidden');
+                $('#table-query-python-stuff').removeClass('hidden');
+                $('#query-input').val('');
+                $('#is-python').prop('checked', true);
+                $('#full-query').prop('checked', false);
+
+                queryPython.split('').map((e, i) => {
+                    queryPythonTimeouts[i] = setTimeout(() => {
+                        $('#query-input').val($('#query-input').val() + e);
+                    }, i * 40)
+                })
+
+                queryPythonTimeouts[queryPython.length] = setTimeout(() => {
+                    app.reloadTable();
+                }, queryPythonTimeouts.length * 40)
+
+                cover.off("click");
+                cover.on('click', tablePythonFull)
+            }
+
+            function tablePythonFull() {
+                queryPythonTimeouts.map((e, i) => {
+                    clearTimeout(e)
+                })
+                $('#table-query-python-stuff').addClass('hidden');
+                $('#table-query-python-full-stuff').removeClass('hidden');
+
+                $('#full-query').prop('checked', true);
+
+                $('#query-input').val('');
+                queryPythonFull.split('').map((e, i) => {
+                    queryPythonFullTimeouts[i] = setTimeout(() => {
+                        $('#query-input').val($('#query-input').val() + e);
+                    }, i * 20)
+                })
+
+                queryPythonFullTimeouts[queryPythonFull.length] = setTimeout(() => {
+                    app.reloadTable();
+                }, queryPythonFullTimeouts.length * 20)
+
+                cover.off("click");
+                cover.on('click', closeFocus)
+            }
+
+            function closeFocus() {
+                queryPythonFullTimeouts.map((e, i) => {
+                    clearTimeout(e)
+                })
+                $('#db-focus-bar').css('position', 'relative');
+                $('#db-focus-bar').css('z-index', 13);
+
+                $('#table-query-python-full-stuff').addClass('hidden');
+                $('#focus-tool-bar-stuff').removeClass('hidden');
+
+                $('#full-query').prop('checked', false);
+
+                $('#query-input').val("name.like('%ド%')");
+                [[5, 0], [6, 0], [7, 0], [8, 0], [8, 2], [8, 4], [8, 12]].map((e, i) => {
+                    limitOffsetTimeouts[i] = setTimeout(() => {
+                        $('#limit').val(e[0]);
+                        $('#offset').val(e[1]);
+                        app.reloadTable();
+                    }, 1000 * i)
+                })
+
+                cover.off("click");
+                cover.on('click', moveToRight)
+            }
+
+            function moveToRight() {
+                limitOffsetTimeouts.map((e, i) => {
+                    clearTimeout(e)
+                })
+
+                $('#db-focus-wrapper').removeAttr('style');
+                $('#db-focus-bar').removeAttr('style');
+                $('#query-wrapper').removeAttr('style');
+                $('#data-wrapper').removeAttr('style');
+
+                $('#focus-tool-bar-stuff').addClass('hidden');
+                $('#move-to-right').removeClass('hidden');
+
+                cover.off("click");
+                cover.on('click', pythonExecBox)
+            }
+
+            function pythonExecBox() {
+
+                $('#move-to-right').addClass('hidden');
+                $('#python-exec-box-stuff').removeClass('hidden');
+
+                $('#python-input-exec').css('position', 'relative');
+                $('#python-input-exec').css('z-index', 13);
+
+                editor.setValue('')
+
+                fibonacciPython.split('').map((e, i) => {
+                    fibonacciPythonTimeouts[i] = setTimeout(() => {
+                        editor.setValue(editor.getValue() + e);
+                    }, i * 20)
+                })
+
+                cover.off("click");
+                cover.on('click', pythonExec)
+            }
+
+            function pythonExec() {
+
+                fibonacciPythonTimeouts.map((e, i) => {
+                    clearTimeout(e)
+                })
+
+                editor.setValue(fibonacciPython)
+
+                $('#python-exec-box-stuff').addClass('hidden');
+                $('#python-exec-stuff').removeClass('hidden');
+
+                $('#python-input-exec').removeAttr('style');
+
+                $('#python-input-exec').removeClass('z-index-2');
+                $('#python-run-btn-exec').css('z-index', 20);
+                $('#python-result-exec').css('position', 'relative');
+                $('#python-result-exec').css('z-index', 13);
+
+                $('#python-run-btn-exec').click();
+
+                cover.off("click");
+                cover.on('click', pythonErrorExec)
+            }
+
+            function pythonErrorExec() {
+
+                editor.setValue('')
+
+                pythonError.split('').map((e, i) => {
+                    pythonErrorTimeouts[i] = setTimeout(() => {
+                        editor.setValue(editor.getValue() + e);
+                    }, i * 10)
+                })
+                pythonErrorTimeouts[pythonErrorTimeouts.length] = setTimeout(() => {
+                    $('#python-run-btn-exec').click();
+                }, pythonErrorTimeouts.length * 10)
+
+                $('#python-exec-stuff').addClass('hidden');
+                $('#python-error-exec-stuff').removeClass('hidden');
+
+                $('#python-run-btn-exec').attr('style', 'visibility: visible');
+                $('#python-result-exec').removeAttr('style');
+
+
+                $('#python-input-exec').css('position', 'relative');
+                $('#python-input-exec').css('z-index', 13);
+
+                $('#python-exec-error').attr('style', 'visibility: hidden; z-index: 13;');
+                $('#hide-text-area').attr('style', 'visibility: hidden; z-index: 14;');
+
+                cover.off("click");
+                cover.on('click', pythonDBExec)
+            }
+
+            function pythonDBExec() {
+
+                pythonErrorTimeouts.map((e, i) => {
+                    clearTimeout(e)
+                })
+
+                editor.setValue('')
+
+                pythonDB.split('').map((e, i) => {
+                    pythonDBTimeouts[i] = setTimeout(() => {
+                        editor.setValue(editor.getValue() + e);
+                    }, i * 10)
+                })
+                pythonDBTimeouts[pythonDBTimeouts.length] = setTimeout(() => {
+                    $('#python-run-btn-exec').click();
+                }, pythonDBTimeouts.length * 10)
+
+                $('#python-exec-error').attr('style', 'visibility: hidden;');
+                $('#hide-text-area').attr('style', 'visibility: hidden;');
+
+                $('#python-error-exec-stuff').addClass('hidden');
+                $('#python-db-exec-stuff').removeClass('hidden');
+
+                $('#python-input-exec').removeAttr('style');
+
+                $('#python-exec-wrapper').css('position', 'relative');
+                $('#python-exec-wrapper').css('z-index', 13);
+
+                cover.off("click");
+                cover.on('click', pythonDBUpload)
+            }
+
+            function pythonDBUpload() {
+
+                pythonDBTimeouts.map((e, i) => {
+                    clearTimeout(e)
+                })
+
+                $('#python-db-exec-stuff').addClass('hidden');
+                $('#python-db-upload-stuff').removeClass('hidden');
+
+                $('#file-upload').css('z-index', 13);
+                $('#python-result-exec').css('position', 'relative');
+                $('#python-result-exec').css('z-index', 13);
+
+                result.setValue(`connection variable : conn1
+cursor variable     : c1
+filepath variable   : db1_path
+filepath            : 'static\\\\db\\\\40c887df2e054406b6b632363f0e7c251ee4f1dcf0ba4beab5148fc0af675062.db'`);
+                editor.setValue('');
+                pythonDBUploadCode.split('').map((e, i) => {
+                    pythonDBUploadTimeouts[i] = setTimeout(() => {
+                        editor.setValue(editor.getValue() + e);
+                    }, i * 10 + 300)
+                })
+                pythonDBUploadTimeouts[pythonDBUploadTimeouts.length] = setTimeout(() => {
+                    result.setValue(`All tables: type; move; ability; pokemon; item; type_relation; move_relation; ability_relation`)
+                }, pythonDBUploadTimeouts.length * 10 + 300)
+
+                cover.off("click");
+                cover.on('click', tourEnd)
+            }
+
+            function tourEnd() {
+                pythonDBUploadTimeouts.map((e, i) => {
+                    clearTimeout(e)
+                })
+
+                $('#python-input-exec').removeAttr('style');
+                $('#python-exec-wrapper').removeAttr('style');
+
+                $('#python-db-upload-stuff').addClass('hidden');
+                $('#tour-end-stuff').removeClass('hidden');
+
+                $('#file-upload').attr('style', 'visibility: visible');
+                $('#python-result-exec').removeAttr('style')
+
+
+                cover.off("click");
+                cover.on('click', endTour)
+            }
+
+            function endTour() {
+
+                coverColor.removeAttr('style')
+                cover.removeAttr('style')
+                $('#tour-end-stuff').addClass('hidden');
+                $('#python-input-exec').addClass('z-index-2');
+
+                editor.setValue(beforeCode);
+                $('#hide-text-area').click()
+                result.setValue('')
+                $('#db-cursor-name').val(beforeTable)
+
+                app.reloadTable();
+                app.closeFocus();
+            }
+
+            cover.on('click', tableStructure)
+        }
     </script>
 {% endblock %}

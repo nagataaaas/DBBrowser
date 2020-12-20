@@ -15,8 +15,7 @@ from starlette.templating import Jinja2Templates
 
 from models import Environment, DBEditor
 from scheme import *
-from utils import reload_or_None
-from utils import stdoutIO
+from utils import reload_or_None, stdoutIO, remove_shallow_traceback
 from config import DEBUG
 
 app = FastAPI(
@@ -110,14 +109,14 @@ async def run_python(sessionId: str = Form(..., description='The session id. sto
                 result = s.getvalue()
         except Exception as e:
             return JSONResponse(
-                jsonable_encoder(PythonResultFailed(errorType=type(e).__name__, traceback=traceback.format_exc(),
+                jsonable_encoder(PythonResultFailed(errorType=type(e).__name__, traceback=remove_shallow_traceback(traceback.format_exc()),
                                                     result=s.getvalue())), 400)
     elif executeType == 'eval':
         try:
             result = repr(eval(code, env[sessionId].env))
         except Exception as e:
             return JSONResponse(
-                jsonable_encoder(PythonResultFailed(errorType=type(e).__name__, traceback=traceback.format_exc())), 400)
+                jsonable_encoder(PythonResultFailed(errorType=type(e).__name__, traceback=remove_shallow_traceback(traceback.format_exc()))), 400)
     return JSONResponse(jsonable_encoder(PythonResultSuccess(result=result)))
 
 
@@ -190,11 +189,18 @@ async def table_data(cursorName: str, tableName: str, offset: int, limit: int, s
         editor = DBEditor(env[sessionId], cursorName).__getattr__(tableName)
         if query:
             if python:
-                query_ = editor
-                loc = copy.copy(env[sessionId].env)
-                loc.update({k: query_.__getattr__(k) for k in editor.columns[tableName.lower()]})
-                query_ = editor.__getitem__(eval(query, loc))
-                result.data = list(query_.limit(limit).offset(offset).get())
+                if fullQuery:
+                    query_ = editor
+                    loc = copy.copy(env[sessionId].env)
+                    loc.update({k: query_.__getattr__(k) for k in editor.columns[tableName.lower()]})
+                    loc.update({tableName: editor})
+                    result.data = list(eval(query, loc))
+                else:
+                    query_ = editor
+                    loc = copy.copy(env[sessionId].env)
+                    loc.update({k: query_.__getattr__(k) for k in editor.columns[tableName.lower()]})
+                    query_ = editor.__getitem__(eval(query, loc))
+                    result.data = list(query_.limit(limit).offset(offset).get())
             else:
                 if fullQuery:
                     result.data = list(editor.query.get(query))

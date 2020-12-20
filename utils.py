@@ -38,3 +38,7 @@ def reload_or_None(sessionId):
             i += 1
     return new_env
 
+
+def remove_shallow_traceback(traceback_str: str):
+    errors = traceback_str.split('\n')
+    return '\n'.join(errors[:1] + errors[3:])

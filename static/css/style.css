@@ -30,6 +30,7 @@
     text-align: center;
     vertical-align: middle;
     padding: 0.1em;
+    cursor: pointer;
 }
 
 #db-cursor-name {
@@ -87,6 +88,23 @@
     font-size: 1.5em;
     background: #c87955;
     width: 6em;
+    height: 2em;
+    color: white;
+    vertical-align: middle;
+    text-align: center;
+}
+
+#take-me-to-tour {
+    position: absolute;
+    visibility: hidden;
+    font-family: Consolas, "Courier New", monospace;
+    right: 12em;
+    bottom: 0;
+    z-index: 4;
+    border: none;
+    font-size: 1.5em;
+    background: #a0c855;
+    width: 5em;
     height: 2em;
     color: white;
     vertical-align: middle;
@@ -192,6 +210,7 @@
     text-align: center;
     vertical-align: middle;
     padding: 0.1em;
+    cursor: pointer;
 }
 
 #focus-table-name {
@@ -225,7 +244,7 @@
 }
 
 #query-input {
-    width: calc(100% - 17em);
+    width: calc(100% - 11em);
 }
 
 .setting-label {
@@ -235,7 +254,7 @@
     vertical-align: middle;
     display: inline-block;
     font-size: 0.8em;
-    width: 10em;
+    width: 6em;
     margin: 0;
 }
 
@@ -246,4 +265,76 @@
 
 #query-wrapper {
     background: #51504f;
+}
+
+#cover {
+    position: fixed;
+    opacity: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 30;
+    pointer-events: none;
+}
+
+#cover-color {
+    position: fixed;
+    opacity: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 10;
+    pointer-events: none;
+    background: #000000;
+}
+
+.left-stuff {
+    font-size: 1.5em;
+    color: white;
+    position: fixed;
+    width: 30vw;
+    height: 90vh;
+    padding: 5%;
+    margin: 5vh 5vw;
+    z-index: 13;
+    pointer-events: none;
+    background: #6e9db0;
+}
+
+.right-stuff {
+    font-size: 1.5em;
+    color: white;
+    position: fixed;
+    width: 50vw;
+    height: 90vh;
+    right: 0;
+    z-index: 13;
+    margin: 5vh 5vw;
+    padding: 5%;
+    pointer-events: none;
+    background: #6e9db0;
+}
+
+.bottom-right {
+    text-align: right;
+    font-size: 0.6em;
+    bottom: 2em;
+    overflow: scroll;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.bottom-right::-webkit-scrollbar {
+    display: none;
+}
+
+.api-detail {
+    font-size: 0.8em;
+    background: #718e8f;
+}
+
+#table-query-python-stuff {
+    font-size: 1.2em;
+}
+
+.z-index-2{
+    z-index: 2
 }
