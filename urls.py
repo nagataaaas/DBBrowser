@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from fastapi import FastAPI, Form, UploadFile, File, Cookie
 from fastapi.encoders import jsonable_encoder
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.requests import Request
 from starlette.templating import Jinja2Templates
@@ -171,6 +171,30 @@ async def db_info(cursorName: str, sessionId: str = Cookie(None, description='th
         return JSONResponse(jsonable_encoder(CursorNotFound()), 400)
 
     return JSONResponse(jsonable_encoder(result))
+
+@app.get('/api/db/download', responses={
+    404: {'model': EnvironmentNotFound,
+          'description': 'when the environment match to sessionId is not found.'},
+    400: {'model': CursorNotFound,
+          'description': 'when the cursor match to cursorName is not found.'},
+    200: {'model': DatabaseColumnData, 'description': 'The data of database.'}
+})
+async def file_download(sessionId: str, db: str):
+    if sessionId not in env:
+        return JSONResponse(jsonable_encoder(EnvironmentNotFound()), 404)
+    try:
+        if db=='sample_c':
+            filename = 'sample_path'
+        elif db.strip('c').isdecimal():
+            filename = 'db{}_path'.format(db.strip('c'))
+        else:
+            raise ValueError
+        result = env[sessionId].env.get(filename)
+        if not result:
+            return JSONResponse(jsonable_encoder(CursorNotFound()), 400)
+    except (ValueError, TypeError):
+        return JSONResponse(jsonable_encoder(CursorNotFound()), 400)
+    return FileResponse(result)
 
 
 @app.get('/table_data', responses={

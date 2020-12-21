@@ -70,7 +70,7 @@
     border: none;
     font-size: 1.5em;
     background: #018786;
-    width: 4em;
+    width: 5em;
     height: 2em;
     color: white;
     vertical-align: middle;
@@ -81,7 +81,7 @@
     position: absolute;
     visibility: hidden;
     font-family: Consolas, "Courier New", monospace;
-    right: 5em;
+    right: 6em;
     bottom: 0;
     z-index: 4;
     border: none;
@@ -94,11 +94,28 @@
     text-align: center;
 }
 
+#file-download {
+    position: absolute;
+    visibility: hidden;
+    font-family: Consolas, "Courier New", monospace;
+    right: 13em;
+    bottom: 0;
+    z-index: 4;
+    border: none;
+    font-size: 1.5em;
+    background: #9e79d6;
+    width: 8em;
+    height: 2em;
+    color: white;
+    vertical-align: middle;
+    text-align: center;
+}
+
 #take-me-to-tour {
     position: absolute;
     visibility: hidden;
     font-family: Consolas, "Courier New", monospace;
-    right: 12em;
+    right: 22em;
     bottom: 0;
     z-index: 4;
     border: none;
@@ -244,7 +261,7 @@
 }
 
 #query-input {
-    width: calc(100% - 11em);
+    width: calc(100% - 13em);
 }
 
 .setting-label {
@@ -254,7 +271,7 @@
     vertical-align: middle;
     display: inline-block;
     font-size: 0.8em;
-    width: 6em;
+    width: 7em;
     margin: 0;
 }
 
@@ -287,7 +304,6 @@
 }
 
 .left-stuff {
-    font-size: 1.5em;
     color: white;
     position: fixed;
     width: 30vw;
@@ -300,7 +316,6 @@
 }
 
 .right-stuff {
-    font-size: 1.5em;
     color: white;
     position: fixed;
     width: 50vw;
@@ -337,4 +352,10 @@
 
 .z-index-2{
     z-index: 2
+}
+
+@media (max-width: 1600px){
+    html{
+        font-size: 0.65em !important;
+    }
 }

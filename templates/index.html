@@ -198,6 +198,8 @@
                 <button id="python-run-btn-exec" type="button">RUN ▶</button>
                 <button type="button" id="file-upload">UPLOAD <i class="fa fa-database" aria-hidden="true"></i>
                 </button>
+                <button type="button" id="file-download">DOWNLOAD <i class="fa fa-download" aria-hidden="true"></i>
+                </button>
                 <button type="button" id="take-me-to-tour" onclick="tour()">TOUR <i class="fa fa-paper-plane"
                                                                                     aria-hidden="true"></i>
                 </button>
@@ -282,6 +284,7 @@ pprint({k: v for k, v in zip(column_name, data)})`;
         const btnVisibility = (visible) => {
             $('#python-run-btn-exec').css('visibility', visible);
             $('#file-upload').css('visibility', visible);
+            $('#file-download').css('visibility', visible);
             $('#take-me-to-tour').css('visibility', visible);
         }
 
@@ -372,7 +375,17 @@ pprint({k: v for k, v in zip(column_name, data)})`;
         })
         $('#file-upload').on('click', () => {
             $('#db-file').click();
+        })
 
+        $('#file-download').on('click', () => {
+            const url = `/api/db/download?sessionId=${Cookies.get('sessionId')}&db=${$('#db-cursor-name').val()}`
+            const a = document.createElement("a");
+            document.body.appendChild(a);
+            a.download = `${$('#db-cursor-name').val()}.db`;
+            a.href = url;
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
         })
 
         $pythonInputExec = $('#python-input-exec');
@@ -735,6 +748,7 @@ print('All tables:', '; '.join([table[0] for table in tables]))
                 $('#db-top-bar').removeAttr('style')
 
                 $('#db-reload').click();
+                window.resizeBy(200, 0)
                 let target = $('#table-wrapper')
                 target.css('position', 'relative');
                 target.css('z-index', 13);
@@ -1070,8 +1084,9 @@ filepath            : 'static\\\\db\\\\40c887df2e054406b6b632363f0e7c251ee4f1dcf
 
             function endTour() {
 
-                coverColor.removeAttr('style')
-                cover.removeAttr('style')
+                cover.off('click');
+                $('#cover-color').removeAttr('style')
+                $('#cover').removeAttr('style')
                 $('#tour-end-stuff').addClass('hidden');
                 $('#python-input-exec').addClass('z-index-2');
 
@@ -1082,6 +1097,7 @@ filepath            : 'static\\\\db\\\\40c887df2e054406b6b632363f0e7c251ee4f1dcf
 
                 app.reloadTable();
                 app.closeFocus();
+
             }
 
             cover.on('click', tableStructure)
