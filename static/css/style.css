@@ -247,7 +247,7 @@
 }
 
 #data-wrapper {
-    height: calc(100vh - 45px);
+    height: calc(100vh - 110px);
     overflow: scroll;
 }
 
@@ -326,6 +326,8 @@
     padding: 5%;
     pointer-events: none;
     background: #6e9db0;
+
+    overflow: scroll;
 }
 
 .bottom-right {
@@ -350,12 +352,12 @@
     font-size: 1.2em;
 }
 
-.z-index-2{
+.z-index-2 {
     z-index: 2
 }
 
-@media (max-width: 1600px){
-    html{
+@media (max-width: 1600px) {
+    html {
         font-size: 0.65em !important;
     }
 }

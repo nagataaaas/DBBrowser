@@ -231,6 +231,10 @@
 
     <script>
         Vue.use(window.vueGoodTable.default);
+        document.getElementById('cover').onwheel = (e) => {
+            let stuff = document.querySelector('div.right-stuff:not(.hidden)') || document.querySelector('div.left-stuff:not(.hidden)');
+            stuff.scrollTop = Math.max(0, stuff.scrollTop + e.deltaY);
+        }
 
         var editor;
         var session;
