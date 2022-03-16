@@ -235,7 +235,7 @@ async def table_data(cursorName: str, tableName: str, offset: int, limit: int, s
         else:
             query_ = editor.query
             result.data = list(query_.limit(limit).offset(offset).get())
-        result.columns = ['index'] + list(result.data[0].keys())
+        result.columns = ['index'] + list(result.data[0].keys()) if result.data else []
         for ind, dat in enumerate(result.data, offset + 1):
             dat['index'] = ind
     except (ValueError, TypeError):
